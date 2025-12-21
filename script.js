@@ -31,18 +31,19 @@ subjectSelect.addEventListener("change", () => {
 
   const subjectData = data[subject];
 
-  for (let part in subjectData) { // part = प्राचीन भारत, मध्यकालीन भारत, etc.
+  // For each part (प्राचीन भारत / मध्यकालीन भारत etc.)
+  for (let part in subjectData) {
     const chapters = subjectData[part];
     for (let ch in chapters) {
       let opt = document.createElement("option");
-      opt.value = part + "||" + ch; // unique value for later
+      opt.value = part + "||" + ch; // unique value
       opt.textContent = part + " - " + ch;
       chapterSelect.appendChild(opt);
     }
   }
 });
 
-// Quiz start
+// Start Quiz
 function startQuiz() {
   correctCount = 0;
   wrongCount = 0;
@@ -56,13 +57,14 @@ function startQuiz() {
     return;
   }
 
+  // Split the value to get part and chapter
   const parts = chapterVal.split("||");
   const part = parts[0];
   const chapter = parts[1];
 
   currentQuestions = [...data[subject][part][chapter]];
-  shuffle(currentQuestions);
 
+  shuffle(currentQuestions);
   document.getElementById("quizArea").style.display = "block";
   showQuestion();
 }
@@ -110,15 +112,12 @@ function showNext() {
   } else {
     document.getElementById("questionBox").innerHTML =
       "🎉 आपने सभी प्रश्न हल कर लिए!";
-
     document.getElementById("optionsBox").innerHTML = "";
-
     document.getElementById("resultBox").innerHTML = `
 ✅ सही जवाब: ${correctCount}<br>
 ❌ गलत जवाब: ${wrongCount}<br>
 📊 कुल प्रश्न: ${currentQuestions.length}
 `;
-
     document.getElementById("nextBtn").style.display = "none";
   }
 }
