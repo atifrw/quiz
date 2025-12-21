@@ -9,25 +9,25 @@
     body { font-family: 'Rubik', sans-serif; background: linear-gradient(to right, #dbe6f6, #c5796d); margin: 0; padding: 20px; }
     .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
     h2 { text-align: center; color: #333; font-size: 28px; }
-    select, button { padding: 12px; font-size: 18px; margin-bottom: 15px; width: 100%; border-radius: 10px; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer; }
+    select, button { padding: 12px; font-size: 18px; margin-bottom: 15px; width: 100%; border-radius: 10px; border: 1px solid #ccc; background-color: #f9f9f9; }
     .question-card { background: #f0f0f0; border-left: 6px solid #4e54c8; padding: 20px; border-radius: 12px; margin-bottom: 20px; font-size: 24px; }
-    .option-btn { display: block; background: #ffffff; border: 2px solid #4e54c8; color: #4e54c8; font-weight: 600; padding: 12px; margin: 12px 0; border-radius: 10px; cursor: pointer; width: 100%; text-align: left; font-size: 18px; transition: 0.3s; }
+    .option-btn { display: block; background: #ffffff; border: 2px solid #4e54c8; color: #4e54c8; font-weight: 600; padding: 12px; margin: 12px 0; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 100%; text-align: left; font-size: 18px; }
     .option-btn:hover { background: #4e54c8; color: white; }
-    .result { font-weight: bold; font-size: 20px; margin-top: 15px; text-align: center; }
+    .result { font-weight: bold; font-size: 20px; margin-top: 15px; color: #000; text-align: center; }
     
-    /* Next Button Style */
+    /* Next Button: Iska display: none JS se hat jayega */
     #nextBtn { 
       display: none; 
       background: #28a745 !important; 
       color: white !important; 
       border: none; 
       text-align: center; 
-      margin-top: 20px;
+      margin-top: 20px; 
+      width: 100%;
     }
   </style>
 </head>
 <body>
-
   <div class="container">
     <h2>🔥 Premium Quiz App</h2>
     
@@ -45,110 +45,93 @@
       <div id="questionBox" class="question-card"></div>
       <div id="optionsBox"></div>
       <div id="resultBox" class="result"></div>
-      <button id="nextBtn" class="option-btn" onclick="showNext()">➡️ अगला सवाल</button>
+      <button id="nextBtn" class="option-btn" onclick="nextQuestionTrigger()">➡️ अगला सवाल</button>
     </div>
   </div>
 
   <script>
-    let data = {};
-    let currentQuestions = [];
-    let currentIndex = 0;
-    let correctCount = 0;
-    let wrongCount = 0;
+    let quizData = {};
+    let selectedQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
 
-    // 1. JSON लोड करना (Cache से बचने के लिए टाइमस्टैम्प जोड़ा है)
-    fetch("mcqs (1).json?v=" + new Date().getTime())
+    // 1. Load JSON (Naming fix)
+    fetch("mcqs (1).json?v=" + Math.random())
       .then(res => res.json())
       .then(json => {
-        data = json;
-        const subSelect = document.getElementById("subjectSelect");
-        Object.keys(data).forEach(sub => {
-          const opt = document.createElement("option");
-          opt.value = sub;
-          opt.textContent = sub;
-          subSelect.appendChild(opt);
+        quizData = json;
+        const subSel = document.getElementById("subjectSelect");
+        Object.keys(quizData).forEach(s => {
+          let op = new Option(s, s);
+          subSel.add(op);
         });
-      })
-      .catch(err => alert("JSON लोड नहीं हो पाया! चेक करें कि mcqs (1).json फाइल सही है।"));
+      });
 
     function updateChapters() {
-      const subject = document.getElementById("subjectSelect").value;
-      const chapSelect = document.getElementById("chapterSelect");
-      chapSelect.innerHTML = "<option value=''>-- अध्याय चुनें --</option>";
-      if (subject && data[subject]) {
-        Object.keys(data[subject]).forEach(ch => {
-          const opt = document.createElement("option");
-          opt.value = ch;
-          opt.textContent = ch;
-          chapSelect.appendChild(opt);
+      const sub = document.getElementById("subjectSelect").value;
+      const chSel = document.getElementById("chapterSelect");
+      chSel.innerHTML = "<option value=''>-- अध्याय चुनें --</option>";
+      if(sub) {
+        Object.keys(quizData[sub]).forEach(c => {
+          chSel.add(new Option(c, c));
         });
       }
     }
 
     function startQuiz() {
-      const sub = document.getElementById("subjectSelect").value;
-      const ch = document.getElementById("chapterSelect").value;
-      if (!sub || !ch) { alert("कृपया चुनें!"); return; }
-
-      correctCount = 0;
-      wrongCount = 0;
-      currentQuestions = [...data[sub][ch]];
+      const s = document.getElementById("subjectSelect").value;
+      const c = document.getElementById("chapterSelect").value;
+      if(!s || !c) return alert("चुनें!");
       
-      // सवालों को मिक्स करना
-      for (let i = currentQuestions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [currentQuestions[i], currentQuestions[j]] = [currentQuestions[j], currentQuestions[i]];
-      }
-
-      currentIndex = 0;
+      selectedQuestions = [...quizData[s][c]];
+      selectedQuestions.sort(() => Math.random() - 0.5); // Shuffle
+      currentIdx = 0;
+      score = 0;
       document.getElementById("quizArea").style.display = "block";
-      showQuestion();
+      showNewQuestion();
     }
 
-    function showQuestion() {
-      const q = currentQuestions[currentIndex];
-      document.getElementById("questionBox").innerHTML = `<b>Q${currentIndex+1}:</b> ${q.question}`;
-      const box = document.getElementById("optionsBox");
-      box.innerHTML = "";
-      document.getElementById("resultBox").innerText = "";
-      
+    function showNewQuestion() {
+      const q = selectedQuestions[currentIdx];
+      document.getElementById("questionBox").innerHTML = `<b>Q${currentIdx+1}:</b> ${q.question}`;
+      const oBox = document.getElementById("optionsBox");
+      const rBox = document.getElementById("resultBox");
       const nBtn = document.getElementById("nextBtn");
-      nBtn.style.display = "none"; // अगला बटन छुपाना
+      
+      oBox.innerHTML = "";
+      rBox.innerText = "";
+      nBtn.style.display = "none"; // Hide next button
 
       q.options.forEach(opt => {
-        const btn = document.createElement("button");
-        btn.className = "option-btn";
-        btn.textContent = opt;
-        btn.onclick = () => {
-          const allBtns = document.querySelectorAll(".option-btn");
-          allBtns.forEach(b => b.style.pointerEvents = "none");
-
-          if (opt === q.answer) {
-            correctCount++;
-            document.getElementById("resultBox").innerHTML = "<p style='color:green;'>✅ सही उत्तर!</p>";
-          } else {
-            wrongCount++;
-            document.getElementById("resultBox").innerHTML = `<p style='color:red;'>❌ गलत! सही उत्तर: ${q.answer}</p>`;
-          }
+        const b = document.createElement("button");
+        b.className = "option-btn";
+        b.innerText = opt;
+        b.onclick = () => {
+          const all = oBox.querySelectorAll("button");
+          all.forEach(btn => btn.style.pointerEvents = "none");
           
-          nBtn.style.display = "block"; // अब बटन 100% दिखेगा
+          if(opt === q.answer) {
+            score++;
+            rBox.innerHTML = "<span style='color:green'>✅ सही उत्तर!</span>";
+          } else {
+            rBox.innerHTML = `<span style='color:red'>❌ गलत! सही: ${q.answer}</span>`;
+          }
+          nBtn.style.display = "block"; // SHOW NEXT BUTTON
         };
-        box.appendChild(btn);
+        oBox.appendChild(b);
       });
     }
 
-    function showNext() {
-      currentIndex++;
-      if (currentIndex < currentQuestions.length) {
-        showQuestion();
+    function nextQuestionTrigger() {
+      currentIdx++;
+      if(currentIdx < selectedQuestions.length) {
+        showNewQuestion();
       } else {
-        const quizArea = document.getElementById("quizArea");
-        quizArea.innerHTML = `
+        document.getElementById("quizArea").innerHTML = `
           <div class="result">
-            <h3>🎉 क्विज़ समाप्त!</h3>
-            <p style="color:green;">सही: ${correctCount}</p>
-            <p style="color:red;">गलत: ${wrongCount}</p>
-            <button onclick="location.reload()">🔄 दोबारा खेलें</button>
+            <h3>🎉 क्विज़ पूरा हुआ!</h3>
+            <p>आपका स्कोर: ${score} / ${selectedQuestions.length}</p>
+            <button onclick="location.reload()">🔄 दोबारा शुरू करें</button>
           </div>`;
       }
     }
