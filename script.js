@@ -5,7 +5,7 @@ let correctCount = 0;
 let wrongCount = 0;
 
 // JSON लोड करना
-fetch("mcqs.json")
+fetch("mcqs (1).json")
   .then(res => res.json())
   .then(json => {
     data = json;
