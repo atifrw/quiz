@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📖 Smart Quiz - Mega Mix Mode</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik&display=swap" rel="stylesheet">
+  <title>📖 Smart Quiz - Mega Mix Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-color: #f0f2f5; --card-bg: #ffffff; --text-color: #2c3e50;
@@ -27,7 +27,7 @@
     #quitBtn { background: #e74c3c; display: none; }
     
     #bookmarkActionBtn { background: transparent; font-size: 20px; padding: 0; display: none; }
-    #bookmarkActionBtn svg { width: 24px; height: 24px; fill: none; stroke: var(--text-color); stroke-width: 2; transition: 0.2s; }
+    #bookmarkActionBtn svg { width: 28px; height: 28px; fill: none; stroke: var(--text-color); stroke-width: 2; transition: 0.2s; }
     #bookmarkActionBtn.active svg { fill: var(--text-color); }
 
     #timerDisplay { font-weight: bold; font-size: 18px; color: #e74c3c; display: none; margin-bottom: 10px; text-align: center; }
@@ -38,8 +38,34 @@
     .challenge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; background: var(--question-bg); padding: 15px; border-radius: 12px; }
     .challenge-grid label { font-size: 13px; font-weight: bold; margin-bottom: 5px; display: block; }
 
-    .question-card { background: var(--question-bg); border-left: 6px solid var(--primary-color); padding: 20px; border-radius: 12px; margin-bottom: 20px; font-size: 20px; }
-    .option-btn { display: block; background: var(--card-bg); border: 2px solid var(--border-color); color: var(--text-color); padding: 12px; margin: 10px 0; border-radius: 10px; cursor: pointer; width: 100%; text-align: left; font-size: 17px; }
+    /* अपडेटेड सवाल स्टाइल - बड़ा और बोल्ड */
+    .question-card { 
+      background: var(--question-bg); 
+      border-left: 6px solid var(--primary-color); 
+      padding: 20px; 
+      border-radius: 12px; 
+      margin-bottom: 20px; 
+      font-size: 24px;   /* साइज बढ़ा दिया */
+      font-weight: 600; /* बोल्ड कर दिया */
+      line-height: 1.5; 
+    }
+
+    /* अपडेटेड ऑप्शन स्टाइल */
+    .option-btn { 
+      display: block; 
+      background: var(--card-bg); 
+      border: 2px solid var(--border-color); 
+      color: var(--text-color); 
+      padding: 14px; 
+      margin: 10px 0; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      width: 100%; 
+      text-align: left; 
+      font-size: 19px; /* साइज बढ़ाया */
+      font-weight: 500;
+      transition: 0.2s; 
+    }
     .option-btn:hover { background: var(--primary-color); color: white; }
     
     #nextBtn { display: none; background: #28a745 !important; color: white !important; border: none; text-align: center; margin-top: 15px; width: 100%; padding: 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
@@ -51,11 +77,9 @@
 
   <div class="header-btns">
     <button id="themeBtn" onclick="toggleTheme()">🌙 Mode</button>
-    
     <button id="bookmarkActionBtn" onclick="handleBookmarkClick()">
       <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
     </button>
-
     <div id="timerDisplay">⏳ 00:00</div>
     <button id="quitBtn" onclick="quitQuiz()">⏹️ Quit</button>
   </div>
@@ -65,39 +89,27 @@
 
     <div id="setupArea">
         <h2>🔥 Smart Quiz Pro</h2>
-        
         <label style="font-size: 12px; font-weight: bold;">1. विषय चुनें:</label>
         <select id="subjectSelect" onchange="updateChapters()">
           <option value="all">-- सभी विषय (Full Syllabus) --</option>
         </select>
-
         <label style="font-size: 12px; font-weight: bold;">2. अध्याय चुनें:</label>
         <select id="chapterSelect">
           <option value="all">-- सभी अध्याय (Subject Mix) --</option>
         </select>
-
         <div class="challenge-grid">
-          <div>
-            <label>सवाल संख्या:</label>
-            <input type="number" id="customLimit" placeholder="उदा. 10">
-          </div>
-          <div>
-            <label>समय (मिनट):</label>
-            <input type="number" id="customTime" placeholder="उदा. 5">
-          </div>
+          <div><label>सवाल संख्या:</label><input type="number" id="customLimit" placeholder="उदा. 10"></div>
+          <div><label>समय (मिनट):</label><input type="number" id="customTime" placeholder="उदा. 5"></div>
         </div>
-
         <button class="main-btn" onclick="startQuiz()" style="background: #5d6d7e; color: white;">🎯 क्विज़ शुरू करें</button>
         <button id="savedPracticeBtn" class="main-btn saved-practice-btn" onclick="startSavedPractice()" style="display:none;">⭐ सहेजे गए सवालों की प्रैक्टिस</button>
     </div>
-
     <div id="quizArea" style="display:none;"></div>
   </div>
 
   <script>
     let quizData = {}, selectedQuestions = [], wrongQuestions = [], currentIdx = 0, score = 0, timerInterval;
     let savedList = JSON.parse(localStorage.getItem("quiz_bookmarks")) || [];
-
     window.onload = checkSavedBtn;
 
     function toggleTheme() {
@@ -114,10 +126,7 @@
     function updateChapters() {
       const s = document.getElementById("subjectSelect").value, c = document.getElementById("chapterSelect");
       c.innerHTML = "<option value='all'>-- सभी अध्याय (Subject Mix) --</option>";
-      
-      if(s !== "all" && quizData[s]) { 
-        Object.keys(quizData[s]).forEach(k => c.add(new Option(k, k))); 
-      }
+      if(s !== "all" && quizData[s]) Object.keys(quizData[s]).forEach(k => c.add(new Option(k, k)));
     }
 
     function checkSavedBtn() {
@@ -126,53 +135,36 @@
     }
 
     function startQuiz() {
-      const s = document.getElementById("subjectSelect").value;
-      const c = document.getElementById("chapterSelect").value;
+      const s = document.getElementById("subjectSelect").value, c = document.getElementById("chapterSelect").value;
       let allTempQ = [];
-
       if (s === "all") {
-        // Full Syllabus Mix: Collect from all subjects and all chapters
         Object.keys(quizData).forEach(subKey => {
-          Object.keys(quizData[subKey]).forEach(chKey => {
-            allTempQ = allTempQ.concat(quizData[subKey][chKey]);
-          });
+          Object.keys(quizData[subKey]).forEach(chKey => { allTempQ = allTempQ.concat(quizData[subKey][chKey]); });
         });
       } else if (c === "all") {
-        // Subject Mix: Collect all chapters of the selected subject
-        Object.keys(quizData[s]).forEach(chKey => {
-          allTempQ = allTempQ.concat(quizData[s][chKey]);
-        });
-      } else {
-        // Specific Chapter
-        allTempQ = [...quizData[s][c]];
-      }
-
-      if(allTempQ.length === 0) return alert("सवाल नहीं मिल पाए!");
-
+        Object.keys(quizData[s]).forEach(chKey => { allTempQ = allTempQ.concat(quizData[s][chKey]); });
+      } else { allTempQ = [...quizData[s][c]]; }
+      if(allTempQ.length === 0) return alert("सवाल नहीं मिले!");
       allTempQ.sort(() => Math.random() - 0.5);
       const limit = parseInt(document.getElementById("customLimit").value);
       selectedQuestions = (limit > 0 && limit <= allTempQ.length) ? allTempQ.slice(0, limit) : allTempQ;
-      
       const mins = parseInt(document.getElementById("customTime").value);
       if(mins > 0) startTimer(mins);
-      
       initQuizUI();
     }
 
     function startSavedPractice() {
-      if(savedList.length === 0) return alert("कोई सवाल सेव नहीं है!");
       selectedQuestions = [...savedList].sort(() => Math.random() - 0.5);
       initQuizUI();
     }
 
     function startTimer(m) {
-      let time = m * 60;
-      const display = document.getElementById("timerDisplay");
+      let time = m * 60; const display = document.getElementById("timerDisplay");
       display.style.display = "block";
       timerInterval = setInterval(() => {
         let mins = Math.floor(time / 60), secs = time % 60;
         display.innerText = `⏳ ${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-        if (--time < 0) { clearInterval(timerInterval); alert("समय समाप्त!"); showFinalResult(); }
+        if (--time < 0) { clearInterval(timerInterval); showFinalResult(); }
       }, 1000);
     }
 
@@ -191,24 +183,20 @@
         <div id="qCount" style="text-align:right; font-size:14px; font-weight:bold; margin-bottom:5px;"></div>
         <div id="questionBox" class="question-card"></div>
         <div id="optionsBox"></div>
-        <div id="resultBox" class="result"></div>
+        <div id="resultBox" class="result" style="text-align:center; font-weight:bold; margin-top:10px;"></div>
         <button id="nextBtn" onclick="nextQuestionTrigger()">➡️ अगला सवाल</button>`;
     }
 
     function showQuestion() {
       const q = selectedQuestions[currentIdx];
-      const progress = (currentIdx / selectedQuestions.length) * 100;
-      document.getElementById("progressBar").style.width = progress + "%";
+      document.getElementById("progressBar").style.width = (currentIdx / selectedQuestions.length) * 100 + "%";
       document.getElementById("qCount").innerText = `सवाल: ${currentIdx + 1} / ${selectedQuestions.length}`;
       document.getElementById("questionBox").innerHTML = q.question;
-      
       const bBtn = document.getElementById("bookmarkActionBtn");
       const isSaved = savedList.some(item => item.question === q.question);
       isSaved ? bBtn.classList.add("active") : bBtn.classList.remove("active");
-
       const oBox = document.getElementById("optionsBox"), rBox = document.getElementById("resultBox"), nBtn = document.getElementById("nextBtn");
       oBox.innerHTML = ""; rBox.innerText = ""; nBtn.style.display = "none";
-
       q.options.forEach(opt => {
         const b = document.createElement("button");
         b.className = "option-btn"; b.innerText = opt;
@@ -226,14 +214,8 @@
       const q = selectedQuestions[currentIdx];
       const bBtn = document.getElementById("bookmarkActionBtn");
       const index = savedList.findIndex(item => item.question === q.question);
-
-      if (index > -1) {
-        savedList.splice(index, 1);
-        bBtn.classList.remove("active");
-      } else {
-        savedList.push(q);
-        bBtn.classList.add("active");
-      }
+      if (index > -1) { savedList.splice(index, 1); bBtn.classList.remove("active"); }
+      else { savedList.push(q); bBtn.classList.add("active"); }
       localStorage.setItem("quiz_bookmarks", JSON.stringify(savedList));
       checkSavedBtn();
     }
