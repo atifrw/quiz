@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📖 Study Quiz - Eye Care Mode</title>
+  <title>📖 Smart Quiz - Study Mode</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik&display=swap" rel="stylesheet">
   <style>
-    /* आँखों के लिए सुकूनदेह रंग (Light Mode) */
     :root {
       --bg-color: #f0f2f5;
       --card-bg: #ffffff;
@@ -17,7 +16,6 @@
       --primary-color: #5d6d7e;
     }
 
-    /* Dark Mode के रंग */
     [data-theme="dark"] {
       --bg-color: #1a1a1a;
       --card-bg: #2d2d2d;
@@ -28,174 +26,104 @@
       --primary-color: #8da2b5;
     }
 
-    body { 
-      font-family: 'Rubik', sans-serif; 
-      background-color: var(--bg-color); 
-      color: var(--text-color);
-      margin: 0; 
-      padding: 20px; 
-      transition: 0.3s;
-    }
-
-    .container { 
-      max-width: 700px; 
-      margin: auto; 
-      background: var(--card-bg); 
-      padding: 30px; 
-      border-radius: 20px; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-    }
-
-    /* Dark Mode Button */
-    .theme-toggle {
-      text-align: right;
-      margin-bottom: 10px;
-    }
-    #themeBtn {
-      width: auto;
-      padding: 8px 15px;
-      font-size: 14px;
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
+    body { font-family: 'Rubik', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: 0.3s; }
+    .container { max-width: 700px; margin: auto; background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    
+    .header-btns { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    #themeBtn, #quitBtn { width: auto; padding: 8px 15px; font-size: 14px; background: var(--primary-color); color: white; border: none; cursor: pointer; border-radius: 5px; }
+    #quitBtn { background: #e74c3c; display: none; }
 
     h2 { text-align: center; margin-top: 0; }
+    select, .main-btn { padding: 14px; font-size: 17px; margin-bottom: 15px; width: 100%; border-radius: 10px; border: 1px solid var(--border-color); background-color: var(--btn-bg); color: var(--text-color); cursor: pointer; }
 
-    select, button { 
-      padding: 14px; 
-      font-size: 17px; 
-      margin-bottom: 15px; 
-      width: 100%; 
-      border-radius: 10px; 
-      border: 1px solid var(--border-color); 
-      background-color: var(--btn-bg); 
-      color: var(--text-color);
-      cursor: pointer;
-    }
-
-    .question-card { 
-      background: var(--question-bg); 
-      border-left: 6px solid var(--primary-color); 
-      padding: 25px; 
-      border-radius: 12px; 
-      margin-bottom: 20px; 
-      font-size: 22px; 
-      line-height: 1.6;
-    }
-
-    .option-btn { 
-      display: block; 
-      background: var(--card-bg); 
-      border: 2px solid var(--border-color); 
-      color: var(--text-color); 
-      font-weight: 500; 
-      padding: 14px; 
-      margin: 12px 0; 
-      border-radius: 10px; 
-      cursor: pointer; 
-      width: 100%; 
-      text-align: left; 
-      font-size: 18px; 
-      transition: 0.2s; 
-    }
-
-    .option-btn:hover { 
-      background: var(--primary-color); 
-      color: white; 
-    }
-
+    .question-card { background: var(--question-bg); border-left: 6px solid var(--primary-color); padding: 25px; border-radius: 12px; margin-bottom: 20px; font-size: 22px; line-height: 1.6; }
+    .option-btn { display: block; background: var(--card-bg); border: 2px solid var(--border-color); color: var(--text-color); font-weight: 500; padding: 14px; margin: 12px 0; border-radius: 10px; cursor: pointer; width: 100%; text-align: left; font-size: 18px; transition: 0.2s; }
+    .option-btn:hover { background: var(--primary-color); color: white; }
     .result { font-weight: bold; font-size: 20px; margin-top: 15px; text-align: center; }
     
-    #nextBtn { 
-      display: none; 
-      background: #576574 !important; 
-      color: white !important; 
-      border: none; 
-      text-align: center; 
-      margin-top: 20px; 
-    }
+    #nextBtn { display: none; background: #576574 !important; color: white !important; border: none; text-align: center; margin-top: 20px; width: 100%; padding: 14px; border-radius: 10px; font-size: 18px; cursor: pointer;}
+    .wrong-practice-btn { background: #f39c12 !important; color: white !important; margin-top: 10px; }
   </style>
 </head>
 <body>
 
-  <div class="theme-toggle">
-    <button id="themeBtn" onclick="toggleTheme()">🌙 डार्क मोड</button>
+  <div class="header-btns">
+    <button id="themeBtn" onclick="toggleTheme()">🌙 Dark Mode</button>
+    <button id="quitBtn" onclick="quitQuiz()">⏹️ Quit Quiz</button>
   </div>
 
   <div class="container">
-    <h2>🔥 Premium Quiz App</h2>
-    
-    <select id="subjectSelect" onchange="updateChapters()">
-      <option value="">-- विषय चुनें (Subject) --</option>
-    </select>
-
-    <select id="chapterSelect">
-      <option value="">-- अध्याय चुनें (Chapter) --</option>
-    </select>
-
-    <button onclick="startQuiz()" style="background: #5d6d7e; color: white; border: none;">🎯 क्विज़ शुरू करें</button>
+    <div id="setupArea">
+        <h2>🔥 Premium Quiz App</h2>
+        <select id="subjectSelect" onchange="updateChapters()">
+          <option value="">-- Vishay Chune (Subject) --</option>
+        </select>
+        <select id="chapterSelect">
+          <option value="">-- Adhyay Chune (Chapter) --</option>
+        </select>
+        <button class="main-btn" onclick="startQuiz()" style="background: #5d6d7e; color: white; border: none;">🎯 Quiz Shuru Karein</button>
+    </div>
 
     <div id="quizArea" style="display:none;">
       <div id="questionBox" class="question-card"></div>
       <div id="optionsBox"></div>
       <div id="resultBox" class="result"></div>
-      <button id="nextBtn" class="option-btn" onclick="nextQuestionTrigger()">➡️ अगला सवाल</button>
+      <button id="nextBtn" onclick="nextQuestionTrigger()">➡️ Agla Sawal</button>
     </div>
   </div>
 
   <script>
     let quizData = {};
     let selectedQuestions = [];
+    let wrongQuestions = [];
     let currentIdx = 0;
     let score = 0;
+    let isWrongPractice = false;
 
-    // Dark Mode Logic
     function toggleTheme() {
       const body = document.body;
       const btn = document.getElementById("themeBtn");
       if (body.hasAttribute("data-theme")) {
         body.removeAttribute("data-theme");
-        btn.innerText = "🌙 डार्क मोड";
+        btn.innerText = "🌙 Dark Mode";
       } else {
         body.setAttribute("data-theme", "dark");
-        btn.innerText = "☀️ लाइट मोड";
+        btn.innerText = "☀️ Light Mode";
       }
     }
 
-    // Load JSON
     fetch("mcqs (1).json?v=" + Math.random())
       .then(res => res.json())
       .then(json => {
         quizData = json;
         const subSel = document.getElementById("subjectSelect");
-        Object.keys(quizData).forEach(s => {
-          subSel.add(new Option(s, s));
-        });
+        Object.keys(quizData).forEach(s => { subSel.add(new Option(s, s)); });
       });
 
     function updateChapters() {
       const sub = document.getElementById("subjectSelect").value;
       const chSel = document.getElementById("chapterSelect");
-      chSel.innerHTML = "<option value=''>-- अध्याय चुनें --</option>";
-      if(sub) {
-        Object.keys(quizData[sub]).forEach(c => {
-          chSel.add(new Option(c, c));
-        });
-      }
+      chSel.innerHTML = "<option value=''>-- Adhyay Chune --</option>";
+      if(sub) { Object.keys(quizData[sub]).forEach(c => { chSel.add(new Option(c, c)); }); }
     }
 
     function startQuiz() {
       const s = document.getElementById("subjectSelect").value;
       const c = document.getElementById("chapterSelect").value;
-      if(!s || !c) return alert("चुनें!");
+      if(!s || !c) return alert("Subject aur Chapter dono chunein!");
       
       selectedQuestions = [...quizData[s][c]];
+      initQuizSettings();
+    }
+
+    function initQuizSettings() {
       selectedQuestions.sort(() => Math.random() - 0.5);
       currentIdx = 0;
       score = 0;
+      wrongQuestions = [];
+      document.getElementById("setupArea").style.display = "none";
       document.getElementById("quizArea").style.display = "block";
+      document.getElementById("quitBtn").style.display = "block";
       showNewQuestion();
     }
 
@@ -220,9 +148,10 @@
           
           if(opt === q.answer) {
             score++;
-            rBox.innerHTML = "<span style='color:#27ae60'>✅ सही उत्तर!</span>";
+            rBox.innerHTML = "<span style='color:#27ae60'>✅ Sahi Uttar!</span>";
           } else {
-            rBox.innerHTML = `<span style='color:#e74c3c'>❌ गलत! सही: ${q.answer}</span>`;
+            rBox.innerHTML = `<span style='color:#e74c3c'>❌ Galat! Sahi: ${q.answer}</span>`;
+            wrongQuestions.push(q); // Galat sawal save karein
           }
           nBtn.style.display = "block";
         };
@@ -235,12 +164,34 @@
       if(currentIdx < selectedQuestions.length) {
         showNewQuestion();
       } else {
-        document.getElementById("quizArea").innerHTML = `
-          <div class="result">
-            <h3>🎉 क्विज़ पूरा हुआ!</h3>
-            <p>आपका स्कोर: ${score} / ${selectedQuestions.length}</p>
-            <button onclick="location.reload()" style="background:#5d6d7e; color:white;">🔄 दोबारा शुरू करें</button>
-          </div>`;
+        showFinalResult();
+      }
+    }
+
+    function showFinalResult() {
+      const quizArea = document.getElementById("quizArea");
+      let resultHTML = `
+        <div class="result">
+          <h3>🎉 Quiz Poora Hua!</h3>
+          <p>Score: ${score} / ${selectedQuestions.length}</p>`;
+      
+      if(wrongQuestions.length > 0) {
+        resultHTML += `<button class="main-btn wrong-practice-btn" onclick="retryWrongQuestions()">🔄 Galat Sawalon ki Practice Karein (${wrongQuestions.length})</button>`;
+      }
+      
+      resultHTML += `<button class="main-btn" onclick="location.reload()">🏠 Home Par Jayein</button></div>`;
+      quizArea.innerHTML = resultHTML;
+      document.getElementById("quitBtn").style.display = "none";
+    }
+
+    function retryWrongQuestions() {
+      selectedQuestions = [...wrongQuestions];
+      initQuizSettings();
+    }
+
+    function quitQuiz() {
+      if(confirm("Kya aap sach mein quiz band karna chahte hain?")) {
+        location.reload();
       }
     }
   </script>
