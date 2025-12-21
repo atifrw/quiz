@@ -1,84 +1,78 @@
-// Mock Data (Isko aap API se bhi connect kar sakte hain)
-const quizData = [
-    {
-        subject: "Science",
-        chapter: "Physics",
-        question: "Light ki speed vacuum mein kitni hoti hai?",
-        options: ["3 x 10^8 m/s", "2 x 10^8 m/s", "3 x 10^10 m/s", "Infinite"],
-        correct: 0
-    },
-    {
-        subject: "Science",
-        chapter: "Biology",
-        question: "Insaan ke shareer ki sabse badi haddi kaunsi hai?",
-        options: ["Stapes", "Femur", "Tibia", "Skull"],
-        correct: 1
-    }
-];
-
+let quizData = [];
 let currentQuestions = [];
 let currentQuestionIndex = 0;
 let score = 0;
-let timerInterval;
 
-const setupContainer = document.getElementById('setup-container');
-const quizContainer = document.getElementById('quiz-container');
-const resultContainer = document.getElementById('result-container');
-const questionText = document.getElementById('question-text');
-const optionsContainer = document.getElementById('options-container');
-const nextBtn = document.getElementById('next-btn');
+// JSON Load karna (Premium Fetch Logic)
+async function loadData() {
+    try {
+        const response = await fetch('questions.json');
+        if (!response.ok) throw new Error("JSON file nahi mili!");
+        const data = await response.json();
+        quizData = data.quizzes;
+        
+        // Subject Dropdown bharna
+        const subSelect = document.getElementById('subject-select');
+        const subjects = [...new Set(quizData.map(item => item.subject))];
+        subSelect.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        
+        updateChapters(); // Initial Chapters Load
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+}
+
+// Chapter Dropdown update karna (Jab Subject badle)
+function updateChapters() {
+    const sub = document.getElementById('subject-select').value;
+    const chapSelect = document.getElementById('chapter-select');
+    const chapters = [...new Set(quizData.filter(q => q.subject === sub).map(q => q.chapter))];
+    chapSelect.innerHTML = chapters.map(c => `<option value="${c}">${c}</option>`).join('');
+}
 
 function startQuiz() {
     const selectedSub = document.getElementById('subject-select').value;
     const selectedChap = document.getElementById('chapter-select').value;
 
-    // Filter questions based on selection
-    currentQuestions = quizData.filter(q => q.subject === selectedSub || q.chapter === selectedChap);
+    currentQuestions = quizData.filter(q => q.subject === selectedSub && q.chapter === selectedChap);
     
-    if (currentQuestions.length === 0) {
-        alert("Is category mein abhi sawal nahi hain!");
-        return;
-    }
+    if (currentQuestions.length === 0) return alert("Sawal nahi mile!");
 
-    setupContainer.classList.add('hidden');
-    quizContainer.classList.remove('hidden');
+    document.getElementById('setup-container').classList.add('hidden');
+    document.getElementById('quiz-container').classList.remove('hidden');
     showQuestion();
 }
 
 function showQuestion() {
     const q = currentQuestions[currentQuestionIndex];
-    questionText.innerText = q.question;
-    optionsContainer.innerHTML = '';
-    nextBtn.classList.add('hidden');
+    document.getElementById('question-text').innerText = q.question;
+    const optionsBox = document.getElementById('options-container');
+    optionsBox.innerHTML = '';
     
-    // Update Progress
-    document.getElementById('question-number').innerText = `Q ${currentQuestionIndex + 1}/${currentQuestions.length}`;
-    document.getElementById('progress-bar').style.width = `${((currentQuestionIndex) / currentQuestions.length) * 100}%`;
+    // UI Updates
+    document.getElementById('question-number').innerText = `Sawal ${currentQuestionIndex + 1}/${currentQuestions.length}`;
+    document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / currentQuestions.length) * 100}%`;
+    document.getElementById('next-btn').classList.add('hidden');
 
-    q.options.forEach((opt, index) => {
+    q.options.forEach((opt, idx) => {
         const btn = document.createElement('button');
         btn.innerText = opt;
-        btn.classList.add('btn', 'option-btn');
-        btn.onclick = () => checkAnswer(btn, index);
-        optionsContainer.appendChild(btn);
+        btn.className = 'btn option-btn';
+        btn.onclick = () => {
+            const allBtns = optionsBox.querySelectorAll('button');
+            if (idx === q.correct) {
+                btn.classList.add('correct');
+                score++;
+                document.getElementById('score-live').innerText = `Score: ${score}`;
+            } else {
+                btn.classList.add('wrong');
+                allBtns[q.correct].classList.add('correct');
+            }
+            allBtns.forEach(b => b.disabled = true);
+            document.getElementById('next-btn').classList.remove('hidden');
+        };
+        optionsBox.appendChild(btn);
     });
-}
-
-function checkAnswer(selectedBtn, index) {
-    const correctIdx = currentQuestions[currentQuestionIndex].correct;
-    const allBtns = optionsContainer.querySelectorAll('button');
-
-    if (index === correctIdx) {
-        selectedBtn.classList.add('correct');
-        score++;
-    } else {
-        selectedBtn.classList.add('wrong');
-        allBtns[correctIdx].classList.add('correct'); // Sahi jawab dikhao
-    }
-
-    // Disable all buttons after click
-    allBtns.forEach(btn => btn.disabled = true);
-    nextBtn.classList.remove('hidden');
 }
 
 function loadNextQuestion() {
@@ -86,13 +80,11 @@ function loadNextQuestion() {
     if (currentQuestionIndex < currentQuestions.length) {
         showQuestion();
     } else {
-        showResult();
+        document.getElementById('quiz-container').classList.add('hidden');
+        document.getElementById('result-container').classList.remove('hidden');
+        document.getElementById('final-score').innerText = `Aapka Kul Score: ${score} / ${currentQuestions.length}`;
     }
 }
 
-function showResult() {
-    quizContainer.classList.add('hidden');
-    resultContainer.classList.remove('hidden');
-    document.getElementById('final-score').innerText = `Aapka Total Score: ${score} / ${currentQuestions.length}`;
-}
-
+// Initialize App
+loadData();
