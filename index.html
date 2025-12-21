@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📖 Smart Quiz - Mega Mix Pro</title>
+  <title>📖 Smart Quiz - Ultimate Offline Pro</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -38,19 +38,19 @@
     .challenge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; background: var(--question-bg); padding: 15px; border-radius: 12px; }
     .challenge-grid label { font-size: 13px; font-weight: bold; margin-bottom: 5px; display: block; }
 
-    /* अपडेटेड सवाल स्टाइल - बड़ा और बोल्ड */
+    /* सवाल स्टाइल - बड़ा और बोल्ड */
     .question-card { 
       background: var(--question-bg); 
       border-left: 6px solid var(--primary-color); 
       padding: 20px; 
       border-radius: 12px; 
       margin-bottom: 20px; 
-      font-size: 24px;   /* साइज बढ़ा दिया */
-      font-weight: 500; /* बोल्ड कर दिया */
+      font-size: 24px; 
+      font-weight: 550; 
       line-height: 1.5; 
     }
 
-    /* अपडेटेड ऑप्शन स्टाइल */
+    /* ऑप्शन स्टाइल */
     .option-btn { 
       display: block; 
       background: var(--card-bg); 
@@ -62,7 +62,7 @@
       cursor: pointer; 
       width: 100%; 
       text-align: left; 
-      font-size: 19px; /* साइज बढ़ाया */
+      font-size: 19px; 
       font-weight: 500;
       transition: 0.2s; 
     }
@@ -232,9 +232,24 @@
       document.getElementById("progressBar").style.width = "100%";
       let resHTML = `<div class="result"><h3>🏁 रिजल्ट: ${score}/${selectedQuestions.length}</h3>`;
       if(wrongQuestions.length > 0) resHTML += `<button class="main-btn" style="background:#f39c12; color:white;" onclick="retryWrong()">🔄 गलत सवाल सुधारें (${wrongQuestions.length})</button>`;
-      resHTML += `<button class="main-btn" onclick="location.reload()">🏠 होम</button></div>`;
+      // रिलोड हटाकर नया goToHome फंक्शन जोड़ा
+      resHTML += `<button class="main-btn" onclick="goToHome()">🏠 होम</button></div>`;
       document.getElementById("quizArea").innerHTML = resHTML;
       document.getElementById("quitBtn").style.display = "none";
+    }
+
+    function goToHome() {
+      // डेटा साफ़ करें
+      currentIdx = 0; score = 0; wrongQuestions = [];
+      clearInterval(timerInterval);
+      // स्क्रीन बदलें (बिना रीलोड के)
+      document.getElementById("quizArea").style.display = "none";
+      document.getElementById("pCont").style.display = "none";
+      document.getElementById("setupArea").style.display = "block";
+      document.getElementById("timerDisplay").style.display = "none";
+      document.getElementById("bookmarkActionBtn").style.display = "none";
+      document.getElementById("quitBtn").style.display = "none";
+      document.getElementById("progressBar").style.width = "0%";
     }
 
     function retryWrong() { selectedQuestions = [...wrongQuestions]; initQuizUI(); }
