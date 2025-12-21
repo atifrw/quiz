@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📖 Smart Quiz - Honest Revision Pro</title>
+  <title>📖 Smart Quiz - 80% Attempt Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -43,19 +43,17 @@
     .option-btn:hover { background: var(--primary-color); color: white; }
     
     #nextBtn { display: none; background: #28a745 !important; color: white !important; border: none; text-align: center; margin-top: 15px; width: 100%; padding: 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
-    .saved-practice-btn { background: #f1c40f !important; color: #000 !important; font-weight: bold; border: none; }
 
     /* Tracker UI */
-    .tracker-card { display: none; margin-top: 10px; animation: fadeIn 0.3s; }
+    .tracker-card { display: none; margin-top: 10px; }
     .subject-group { margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
     .subject-title { background: var(--primary-color); color: white; padding: 10px; font-weight: bold; }
     .chapter-row { display: flex; justify-content: space-between; padding: 10px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); align-items: center; }
     .status-badge { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-    .status-green { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
-    .status-yellow { background: #f1c40f; box-shadow: 0 0 5px #f1c40f; }
-    .status-red { background: #e74c3c; box-shadow: 0 0 5px #e74c3c; }
+    .status-green { background: #2ecc71; }
+    .status-yellow { background: #f1c40f; }
+    .status-red { background: #e74c3c; }
     .last-date { font-size: 11px; color: #888; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
 </head>
 <body>
@@ -74,19 +72,17 @@
 
     <div id="setupArea">
         <h2>🔥 Smart Quiz Pro</h2>
-        <label style="font-size: 12px; font-weight: bold;">1. विषय चुनें:</label>
-        <select id="subjectSelect" onchange="updateChapters()"><option value="all">-- सभी विषय (Full Syllabus) --</option></select>
-        <label style="font-size: 12px; font-weight: bold;">2. अध्याय चुनें:</label>
-        <select id="chapterSelect"><option value="all">-- सभी अध्याय (Subject Mix) --</option></select>
+        <select id="subjectSelect" onchange="updateChapters()"><option value="all">-- सभी विषय --</option></select>
+        <select id="chapterSelect"><option value="all">-- सभी अध्याय --</option></select>
         
         <div class="challenge-grid">
-          <div><label>सवाल संख्या:</label><input type="number" id="customLimit" placeholder="उदा. 10"></div>
-          <div><label>समय (मिनट):</label><input type="number" id="customTime" placeholder="उदा. 5"></div>
+          <div><label>सवाल:</label><input type="number" id="customLimit" placeholder="उदा. 10"></div>
+          <div><label>मिनट:</label><input type="number" id="customTime" placeholder="उदा. 5"></div>
         </div>
         
         <button class="main-btn" onclick="startQuiz()" style="background: #5d6d7e; color: white;">🎯 क्विज़ शुरू करें</button>
         <button class="main-btn" onclick="toggleTracker()" style="background: #3498db; color: white;">📊 Revision Tracker</button>
-        <button id="savedPracticeBtn" class="main-btn saved-practice-btn" onclick="startSavedPractice()" style="display:none;">⭐ सहेजे गए सवाल</button>
+        <button id="savedPracticeBtn" class="main-btn" style="background:#f1c40f; color:#000; display:none;" onclick="startSavedPractice()">⭐ सहेजे गए सवाल</button>
 
         <div id="trackerArea" class="tracker-card">
           <h3 style="text-align:center;">📅 रिवीजन स्टेटस</h3>
@@ -99,6 +95,7 @@
 
   <script>
     let quizData = {}, selectedQuestions = [], wrongQuestions = [], currentIdx = 0, score = 0, timerInterval;
+    let questionsAttempted = 0; // Track how many questions answered
     let currentSub = "", currentCh = ""; 
     let savedList = JSON.parse(localStorage.getItem("quiz_bookmarks")) || [];
     let revisionDates = JSON.parse(localStorage.getItem("revision_dates")) || {};
@@ -118,7 +115,7 @@
 
     function updateChapters() {
       const s = document.getElementById("subjectSelect").value, c = document.getElementById("chapterSelect");
-      c.innerHTML = "<option value='all'>-- सभी अध्याय (Subject Mix) --</option>";
+      c.innerHTML = "<option value='all'>-- सभी अध्याय --</option>";
       if(s !== "all" && quizData[s]) Object.keys(quizData[s]).forEach(k => c.add(new Option(k, k)));
     }
 
@@ -180,7 +177,7 @@
     }
 
     function initQuizUI() {
-      currentIdx = 0; score = 0; wrongQuestions = [];
+      currentIdx = 0; score = 0; questionsAttempted = 0; wrongQuestions = [];
       document.getElementById("setupArea").style.display = "none";
       document.getElementById("pCont").style.display = "block";
       document.getElementById("quizArea").style.display = "block";
@@ -213,6 +210,7 @@
         const b = document.createElement("button");
         b.className = "option-btn"; b.innerText = opt;
         b.onclick = () => {
+          questionsAttempted++; // Increment attempt
           document.querySelectorAll(".option-btn").forEach(btn => btn.style.pointerEvents = "none");
           if(opt === q.answer) { score++; rBox.innerHTML = "<span style='color:#27ae60'>✅ सही!</span>"; }
           else { rBox.innerHTML = `<span style='color:#e74c3c'>❌ गलत! सही: ${q.answer}</span>`; wrongQuestions.push(q); }
@@ -233,17 +231,15 @@
       document.getElementById("bookmarkActionBtn").style.display = "none";
       document.getElementById("progressBar").style.width = "100%";
 
-      // --- SMART PASS LOGIC ---
-      const passPercentage = (score / selectedQuestions.length) * 100;
-      const isFullQuiz = (currentIdx >= selectedQuestions.length); // क्या आखिरी सवाल तक पहुँचे?
-
-      if (isFullQuiz && passPercentage >= 60 && currentSub !== "all" && currentCh !== "all") {
+      // --- ATTEMPT LOGIC (80%) ---
+      const attemptPercent = (questionsAttempted / selectedQuestions.length) * 100;
+      if (attemptPercent >= 80 && currentSub !== "all" && currentCh !== "all") {
         revisionDates[`${currentSub}_${currentCh}`] = Date.now();
         localStorage.setItem("revision_dates", JSON.stringify(revisionDates));
       }
 
       let resHTML = `<div class="result"><h3>🏁 रिजल्ट: ${score}/${selectedQuestions.length}</h3>`;
-      if(passPercentage < 60) resHTML += `<p style="color:#e74c3c;">⚠️ स्कोर 60% से कम है, इसलिए ट्रैकर अपडेट नहीं हुआ।</p>`;
+      if(attemptPercent < 80) resHTML += `<p style="color:#e74c3c;">⚠️ आपने 80% सवाल हल नहीं किए, ट्रैकर अपडेट नहीं हुआ।</p>`;
       if(wrongQuestions.length > 0) resHTML += `<button class="main-btn" style="background:#f39c12; color:white;" onclick="retryWrong()">🔄 गलत सवाल सुधारें (${wrongQuestions.length})</button>`;
       resHTML += `<button class="main-btn" onclick="goToHome()">🏠 होम</button></div>`;
       document.getElementById("quizArea").innerHTML = resHTML;
@@ -251,7 +247,7 @@
     }
 
     function goToHome() {
-      currentIdx = 0; score = 0; wrongQuestions = [];
+      currentIdx = 0; score = 0; questionsAttempted = 0; wrongQuestions = [];
       clearInterval(timerInterval);
       document.getElementById("quizArea").style.display = "none";
       document.getElementById("pCont").style.display = "none";
@@ -274,7 +270,7 @@
 
     function checkSavedBtn() { document.getElementById("savedPracticeBtn").style.display = savedList.length > 0 ? "block" : "none"; }
     function retryWrong() { selectedQuestions = [...wrongQuestions]; initQuizUI(); }
-    function quitQuiz() { if(confirm("क्विज़ छोड़ें? (ट्रैकर अपडेट नहीं होगा)")) showFinalResult(); }
+    function quitQuiz() { if(confirm("क्विज़ छोड़ें? (अगर 80% सवाल नहीं हुए तो ट्रैकर अपडेट नहीं होगा)")) showFinalResult(); }
     function startSavedPractice() { selectedQuestions = [...savedList]; initQuizUI(); }
   </script>
 </body>
