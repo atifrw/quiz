@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📖 Smart Quiz - Pro Challenge</title>
+  <title>📖 Smart Quiz - Mega Mix Mode</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -26,7 +26,6 @@
     #themeBtn, #quitBtn, #bookmarkActionBtn { padding: 8px 12px; font-size: 13px; background: var(--primary-color); color: white; border: none; cursor: pointer; border-radius: 5px; display: flex; align-items: center; justify-content: center; }
     #quitBtn { background: #e74c3c; display: none; }
     
-    /* Bookmark Style for Header */
     #bookmarkActionBtn { background: transparent; font-size: 20px; padding: 0; display: none; }
     #bookmarkActionBtn svg { width: 24px; height: 24px; fill: none; stroke: var(--text-color); stroke-width: 2; transition: 0.2s; }
     #bookmarkActionBtn.active svg { fill: var(--text-color); }
@@ -66,17 +65,25 @@
 
     <div id="setupArea">
         <h2>🔥 Smart Quiz Pro</h2>
-        <select id="subjectSelect" onchange="updateChapters()"><option value="">-- विषय चुनें --</option></select>
-        <select id="chapterSelect"><option value="">-- अध्याय चुनें --</option></select>
+        
+        <label style="font-size: 12px; font-weight: bold;">1. विषय चुनें:</label>
+        <select id="subjectSelect" onchange="updateChapters()">
+          <option value="all">-- सभी विषय (Full Syllabus) --</option>
+        </select>
+
+        <label style="font-size: 12px; font-weight: bold;">2. अध्याय चुनें:</label>
+        <select id="chapterSelect">
+          <option value="all">-- सभी अध्याय (Subject Mix) --</option>
+        </select>
 
         <div class="challenge-grid">
           <div>
             <label>सवाल संख्या:</label>
-            <input type="number" id="customLimit" placeholder="उदा. 10" min="1">
+            <input type="number" id="customLimit" placeholder="उदा. 10">
           </div>
           <div>
             <label>समय (मिनट):</label>
-            <input type="number" id="customTime" placeholder="उदा. 5" min="1">
+            <input type="number" id="customTime" placeholder="उदा. 5">
           </div>
         </div>
 
@@ -91,7 +98,6 @@
     let quizData = {}, selectedQuestions = [], wrongQuestions = [], currentIdx = 0, score = 0, timerInterval;
     let savedList = JSON.parse(localStorage.getItem("quiz_bookmarks")) || [];
 
-    // Initial load for saved button
     window.onload = checkSavedBtn;
 
     function toggleTheme() {
@@ -107,8 +113,11 @@
 
     function updateChapters() {
       const s = document.getElementById("subjectSelect").value, c = document.getElementById("chapterSelect");
-      c.innerHTML = "<option value=''>-- अध्याय चुनें --</option>";
-      if(s) Object.keys(quizData[s]).forEach(k => c.add(new Option(k, k)));
+      c.innerHTML = "<option value='all'>-- सभी अध्याय (Subject Mix) --</option>";
+      
+      if(s !== "all" && quizData[s]) { 
+        Object.keys(quizData[s]).forEach(k => c.add(new Option(k, k))); 
+      }
     }
 
     function checkSavedBtn() {
@@ -117,12 +126,32 @@
     }
 
     function startQuiz() {
-      const s = document.getElementById("subjectSelect").value, c = document.getElementById("chapterSelect").value;
-      if(!s || !c) return alert("विषय और अध्याय चुनें!");
-      
-      let allQ = [...quizData[s][c]].sort(() => Math.random() - 0.5);
+      const s = document.getElementById("subjectSelect").value;
+      const c = document.getElementById("chapterSelect").value;
+      let allTempQ = [];
+
+      if (s === "all") {
+        // Full Syllabus Mix: Collect from all subjects and all chapters
+        Object.keys(quizData).forEach(subKey => {
+          Object.keys(quizData[subKey]).forEach(chKey => {
+            allTempQ = allTempQ.concat(quizData[subKey][chKey]);
+          });
+        });
+      } else if (c === "all") {
+        // Subject Mix: Collect all chapters of the selected subject
+        Object.keys(quizData[s]).forEach(chKey => {
+          allTempQ = allTempQ.concat(quizData[s][chKey]);
+        });
+      } else {
+        // Specific Chapter
+        allTempQ = [...quizData[s][c]];
+      }
+
+      if(allTempQ.length === 0) return alert("सवाल नहीं मिल पाए!");
+
+      allTempQ.sort(() => Math.random() - 0.5);
       const limit = parseInt(document.getElementById("customLimit").value);
-      selectedQuestions = (limit > 0 && limit <= allQ.length) ? allQ.slice(0, limit) : allQ;
+      selectedQuestions = (limit > 0 && limit <= allTempQ.length) ? allTempQ.slice(0, limit) : allTempQ;
       
       const mins = parseInt(document.getElementById("customTime").value);
       if(mins > 0) startTimer(mins);
@@ -173,7 +202,6 @@
       document.getElementById("qCount").innerText = `सवाल: ${currentIdx + 1} / ${selectedQuestions.length}`;
       document.getElementById("questionBox").innerHTML = q.question;
       
-      // Update Bookmark Icon State
       const bBtn = document.getElementById("bookmarkActionBtn");
       const isSaved = savedList.some(item => item.question === q.question);
       isSaved ? bBtn.classList.add("active") : bBtn.classList.remove("active");
