@@ -22,9 +22,14 @@
     .progress-container { width: 100%; background: #eee; height: 8px; border-radius: 5px; margin-bottom: 15px; display: none; }
     #progressBar { height: 100%; width: 0%; background: var(--progress-color); border-radius: 5px; transition: 0.4s; }
 
-    .header-btns { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    #themeBtn, #quitBtn { padding: 8px 15px; font-size: 13px; background: var(--primary-color); color: white; border: none; cursor: pointer; border-radius: 5px; }
+    .header-btns { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 5px; }
+    #themeBtn, #quitBtn, #bookmarkActionBtn { padding: 8px 12px; font-size: 13px; background: var(--primary-color); color: white; border: none; cursor: pointer; border-radius: 5px; display: flex; align-items: center; justify-content: center; }
     #quitBtn { background: #e74c3c; display: none; }
+    
+    /* Bookmark Style for Header */
+    #bookmarkActionBtn { background: transparent; font-size: 20px; padding: 0; display: none; }
+    #bookmarkActionBtn svg { width: 24px; height: 24px; fill: none; stroke: var(--text-color); stroke-width: 2; transition: 0.2s; }
+    #bookmarkActionBtn.active svg { fill: var(--text-color); }
 
     #timerDisplay { font-weight: bold; font-size: 18px; color: #e74c3c; display: none; margin-bottom: 10px; text-align: center; }
 
@@ -39,12 +44,19 @@
     .option-btn:hover { background: var(--primary-color); color: white; }
     
     #nextBtn { display: none; background: #28a745 !important; color: white !important; border: none; text-align: center; margin-top: 15px; width: 100%; padding: 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+    
+    .saved-practice-btn { background: #f1c40f !important; color: #000 !important; font-weight: bold; border: none; }
   </style>
 </head>
 <body>
 
   <div class="header-btns">
     <button id="themeBtn" onclick="toggleTheme()">🌙 Mode</button>
+    
+    <button id="bookmarkActionBtn" onclick="handleBookmarkClick()">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+    </button>
+
     <div id="timerDisplay">⏳ 00:00</div>
     <button id="quitBtn" onclick="quitQuiz()">⏹️ Quit</button>
   </div>
@@ -69,6 +81,7 @@
         </div>
 
         <button class="main-btn" onclick="startQuiz()" style="background: #5d6d7e; color: white;">🎯 क्विज़ शुरू करें</button>
+        <button id="savedPracticeBtn" class="main-btn saved-practice-btn" onclick="startSavedPractice()" style="display:none;">⭐ सहेजे गए सवालों की प्रैक्टिस</button>
     </div>
 
     <div id="quizArea" style="display:none;"></div>
@@ -76,6 +89,10 @@
 
   <script>
     let quizData = {}, selectedQuestions = [], wrongQuestions = [], currentIdx = 0, score = 0, timerInterval;
+    let savedList = JSON.parse(localStorage.getItem("quiz_bookmarks")) || [];
+
+    // Initial load for saved button
+    window.onload = checkSavedBtn;
 
     function toggleTheme() {
       const b = document.body;
@@ -94,6 +111,11 @@
       if(s) Object.keys(quizData[s]).forEach(k => c.add(new Option(k, k)));
     }
 
+    function checkSavedBtn() {
+      const btn = document.getElementById("savedPracticeBtn");
+      btn.style.display = savedList.length > 0 ? "block" : "none";
+    }
+
     function startQuiz() {
       const s = document.getElementById("subjectSelect").value, c = document.getElementById("chapterSelect").value;
       if(!s || !c) return alert("विषय और अध्याय चुनें!");
@@ -105,6 +127,12 @@
       const mins = parseInt(document.getElementById("customTime").value);
       if(mins > 0) startTimer(mins);
       
+      initQuizUI();
+    }
+
+    function startSavedPractice() {
+      if(savedList.length === 0) return alert("कोई सवाल सेव नहीं है!");
+      selectedQuestions = [...savedList].sort(() => Math.random() - 0.5);
       initQuizUI();
     }
 
@@ -125,6 +153,7 @@
       document.getElementById("pCont").style.display = "block";
       document.getElementById("quizArea").style.display = "block";
       document.getElementById("quitBtn").style.display = "block";
+      document.getElementById("bookmarkActionBtn").style.display = "flex";
       renderLayout(); showQuestion();
     }
 
@@ -144,6 +173,11 @@
       document.getElementById("qCount").innerText = `सवाल: ${currentIdx + 1} / ${selectedQuestions.length}`;
       document.getElementById("questionBox").innerHTML = q.question;
       
+      // Update Bookmark Icon State
+      const bBtn = document.getElementById("bookmarkActionBtn");
+      const isSaved = savedList.some(item => item.question === q.question);
+      isSaved ? bBtn.classList.add("active") : bBtn.classList.remove("active");
+
       const oBox = document.getElementById("optionsBox"), rBox = document.getElementById("resultBox"), nBtn = document.getElementById("nextBtn");
       oBox.innerHTML = ""; rBox.innerText = ""; nBtn.style.display = "none";
 
@@ -160,6 +194,22 @@
       });
     }
 
+    function handleBookmarkClick() {
+      const q = selectedQuestions[currentIdx];
+      const bBtn = document.getElementById("bookmarkActionBtn");
+      const index = savedList.findIndex(item => item.question === q.question);
+
+      if (index > -1) {
+        savedList.splice(index, 1);
+        bBtn.classList.remove("active");
+      } else {
+        savedList.push(q);
+        bBtn.classList.add("active");
+      }
+      localStorage.setItem("quiz_bookmarks", JSON.stringify(savedList));
+      checkSavedBtn();
+    }
+
     function nextQuestionTrigger() {
       currentIdx++;
       currentIdx < selectedQuestions.length ? showQuestion() : showFinalResult();
@@ -168,6 +218,7 @@
     function showFinalResult() {
       clearInterval(timerInterval);
       document.getElementById("timerDisplay").style.display = "none";
+      document.getElementById("bookmarkActionBtn").style.display = "none";
       document.getElementById("progressBar").style.width = "100%";
       let resHTML = `<div class="result"><h3>🏁 रिजल्ट: ${score}/${selectedQuestions.length}</h3>`;
       if(wrongQuestions.length > 0) resHTML += `<button class="main-btn" style="background:#f39c12; color:white;" onclick="retryWrong()">🔄 गलत सवाल सुधारें (${wrongQuestions.length})</button>`;
