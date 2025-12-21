@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📖 Smart Quiz - Study Mode</title>
+  <title>📖 Smart Quiz - Challenge Mode</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -14,6 +14,7 @@
       --border-color: #dcdde1;
       --btn-bg: #f8f9fa;
       --primary-color: #5d6d7e;
+      --progress-color: #2ecc71;
     }
 
     [data-theme="dark"] {
@@ -27,8 +28,12 @@
     }
 
     body { font-family: 'Rubik', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: 0.3s; }
-    .container { max-width: 700px; margin: auto; background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .container { max-width: 700px; margin: auto; background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: relative; overflow: hidden; }
     
+    /* Progress Bar Style */
+    .progress-container { width: 100%; background: #eee; height: 10px; border-radius: 5px; margin-bottom: 20px; display: none; }
+    #progressBar { height: 100%; width: 0%; background: var(--progress-color); border-radius: 5px; transition: 0.4s; }
+
     .header-btns { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     #themeBtn, #quitBtn { width: auto; padding: 8px 15px; font-size: 14px; background: var(--primary-color); color: white; border: none; cursor: pointer; border-radius: 5px; }
     #quitBtn { background: #e74c3c; display: none; }
@@ -42,7 +47,10 @@
     .result { font-weight: bold; font-size: 20px; margin-top: 15px; text-align: center; }
     
     #nextBtn { display: none; background: #28a745 !important; color: white !important; border: none; text-align: center; margin-top: 20px; width: 100%; padding: 14px; border-radius: 10px; font-size: 18px; cursor: pointer;}
-    .wrong-practice-btn { background: #f39c12 !important; color: white !important; margin-top: 10px; }
+    
+    /* Self-Challenge Section */
+    .challenge-box { margin-bottom: 20px; padding: 15px; border: 1px dashed var(--primary-color); border-radius: 10px; text-align: center; }
+    .challenge-label { display: block; margin-bottom: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -53,15 +61,30 @@
   </div>
 
   <div class="container">
+    <div class="progress-container" id="pCont">
+      <div id="progressBar"></div>
+    </div>
+
     <div id="setupArea">
-        <h2>🔥 Premium Quiz App</h2>
+        <h2>🔥 Smart Quiz Pro</h2>
         <select id="subjectSelect" onchange="updateChapters()">
-          <option value="">-- Vishay Chune --</option>
+          <option value="">-- विषय चुनें --</option>
         </select>
         <select id="chapterSelect">
-          <option value="">-- Adhyay Chune --</option>
+          <option value="">-- अध्याय चुनें --</option>
         </select>
-        <button class="main-btn" onclick="startQuiz()" style="background: #5d6d7e; color: white; border: none;">🎯 Quiz Shuru Karein</button>
+
+        <div class="challenge-box">
+          <label class="challenge-label">🎯 Self-Challenge: कितने सवाल हल करने हैं?</label>
+          <select id="questionLimit">
+            <option value="5">5 सवाल</option>
+            <option value="10">10 सवाल</option>
+            <option value="20">20 सवाल</option>
+            <option value="0">सभी सवाल (All)</option>
+          </select>
+        </div>
+
+        <button class="main-btn" onclick="startQuiz()" style="background: #5d6d7e; color: white; border: none;">🎯 क्विज़ शुरू करें</button>
     </div>
 
     <div id="quizArea" style="display:none;">
@@ -74,6 +97,7 @@
     let wrongQuestions = [];
     let currentIdx = 0;
     let score = 0;
+    let totalChallengeLimit = 0;
 
     function toggleTheme() {
       const body = document.body;
@@ -98,46 +122,67 @@
     function updateChapters() {
       const sub = document.getElementById("subjectSelect").value;
       const chSel = document.getElementById("chapterSelect");
-      chSel.innerHTML = "<option value=''>-- Adhyay Chune --</option>";
+      chSel.innerHTML = "<option value=''>-- अध्याय चुनें --</option>";
       if(sub) { Object.keys(quizData[sub]).forEach(c => { chSel.add(new Option(c, c)); }); }
     }
 
     function startQuiz() {
       const s = document.getElementById("subjectSelect").value;
       const c = document.getElementById("chapterSelect").value;
-      if(!s || !c) return alert("Subject aur Chapter dono chunein!");
+      const limit = parseInt(document.getElementById("questionLimit").value);
       
-      selectedQuestions = [...quizData[s][c]];
+      if(!s || !c) return alert("विषय और अध्याय चुनें!");
+      
+      let allQuestions = [...quizData[s][c]];
+      allQuestions.sort(() => Math.random() - 0.5); // Shuffle all
+
+      // Apply Self-Challenge Limit
+      if(limit > 0 && limit < allQuestions.length) {
+        selectedQuestions = allQuestions.slice(0, limit);
+      } else {
+        selectedQuestions = allQuestions;
+      }
+      
+      totalChallengeLimit = selectedQuestions.length;
       wrongQuestions = [];
       initQuizUI();
     }
 
     function initQuizUI() {
-      selectedQuestions.sort(() => Math.random() - 0.5);
       currentIdx = 0;
       score = 0;
       
       document.getElementById("setupArea").style.display = "none";
+      document.getElementById("pCont").style.display = "block"; // Show progress bar
       const qArea = document.getElementById("quizArea");
       qArea.style.display = "block";
       document.getElementById("quitBtn").style.display = "block";
       
       resetQuizLayout();
+      updateProgressBar();
       showNewQuestion();
     }
 
     function resetQuizLayout() {
       document.getElementById("quizArea").innerHTML = `
+        <div id="qCounter" style="text-align:right; font-weight:bold; margin-bottom:5px;"></div>
         <div id="questionBox" class="question-card"></div>
         <div id="optionsBox"></div>
         <div id="resultBox" class="result"></div>
-        <button id="nextBtn" onclick="nextQuestionTrigger()">➡️ Agla Sawal</button>
+        <button id="nextBtn" onclick="nextQuestionTrigger()">➡️ अगला सवाल</button>
       `;
     }
 
+    function updateProgressBar() {
+      const progress = (currentIdx / totalChallengeLimit) * 100;
+      document.getElementById("progressBar").style.width = progress + "%";
+      document.getElementById("qCounter").innerText = `सवाल: ${currentIdx + 1} / ${totalChallengeLimit}`;
+    }
+
     function showNewQuestion() {
+      updateProgressBar();
       const q = selectedQuestions[currentIdx];
-      document.getElementById("questionBox").innerHTML = `<b>Q${currentIdx+1}:</b> ${q.question}`;
+      document.getElementById("questionBox").innerHTML = `<b>Q:</b> ${q.question}`;
       const oBox = document.getElementById("optionsBox");
       const rBox = document.getElementById("resultBox");
       const nBtn = document.getElementById("nextBtn");
@@ -156,10 +201,9 @@
           
           if(opt === q.answer) {
             score++;
-            rBox.innerHTML = "<span style='color:#27ae60'>✅ Sahi Uttar!</span>";
+            rBox.innerHTML = "<span style='color:#27ae60'>✅ सही उत्तर!</span>";
           } else {
-            rBox.innerHTML = `<span style='color:#e74c3c'>❌ Galat! Sahi: ${q.answer}</span>`;
-            // Avoid duplicates in wrongQuestions
+            rBox.innerHTML = `<span style='color:#e74c3c'>❌ गलत! सही: ${q.answer}</span>`;
             if(!wrongQuestions.includes(q)) wrongQuestions.push(q);
           }
           nBtn.style.display = "block";
@@ -173,6 +217,7 @@
       if(currentIdx < selectedQuestions.length) {
         showNewQuestion();
       } else {
+        document.getElementById("progressBar").style.width = "100%";
         showFinalResult();
       }
     }
@@ -181,27 +226,27 @@
       const quizArea = document.getElementById("quizArea");
       let resultHTML = `
         <div class="result">
-          <h3>🎉 Quiz Result</h3>
-          <p>Score: ${score} / ${selectedQuestions.length}</p>`;
+          <h3>🎉 क्विज़ पूरा हुआ!</h3>
+          <p>आपका स्कोर: ${score} / ${selectedQuestions.length}</p>`;
       
       if(wrongQuestions.length > 0) {
-        resultHTML += `<button class="main-btn wrong-practice-btn" onclick="retryWrongQuestions()">🔄 Sirf Galat Sawalon ki Practice Karein (${wrongQuestions.length})</button>`;
+        resultHTML += `<button class="main-btn" style="background:#f39c12; color:white;" onclick="retryWrongQuestions()">🔄 गलत सवालों की प्रैक्टिस (${wrongQuestions.length})</button>`;
       }
       
-      resultHTML += `<button class="main-btn" onclick="location.reload()">🏠 Home Par Jayein</button></div>`;
+      resultHTML += `<button class="main-btn" onclick="location.reload()">🏠 होम पर जायें</button></div>`;
       quizArea.innerHTML = resultHTML;
       document.getElementById("quitBtn").style.display = "none";
     }
 
     function retryWrongQuestions() {
       selectedQuestions = [...wrongQuestions];
-      wrongQuestions = []; // Reset for new practice session
+      wrongQuestions = [];
+      totalChallengeLimit = selectedQuestions.length;
       initQuizUI();
     }
 
     function quitQuiz() {
-      if(confirm("Kya aap quiz band karke result dekhna chahte hain?")) {
-        // We adjust the length for the final score display
+      if(confirm("क्या आप क्विज़ बंद करके अब तक का रिजल्ट देखना चाहते हैं?")) {
         selectedQuestions = selectedQuestions.slice(0, currentIdx + 1);
         showFinalResult();
       }
