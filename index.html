@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📖 Smart Quiz - Revision Tracker Pro</title>
+  <title>📖 Smart Quiz - Honest Revision Pro</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -45,16 +45,17 @@
     #nextBtn { display: none; background: #28a745 !important; color: white !important; border: none; text-align: center; margin-top: 15px; width: 100%; padding: 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
     .saved-practice-btn { background: #f1c40f !important; color: #000 !important; font-weight: bold; border: none; }
 
-    /* Revision Tracker Styles */
-    .tracker-card { display: none; margin-top: 10px; }
+    /* Tracker UI */
+    .tracker-card { display: none; margin-top: 10px; animation: fadeIn 0.3s; }
     .subject-group { margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
-    .subject-title { background: var(--primary-color); color: white; padding: 10px; font-weight: bold; font-size: 16px; }
+    .subject-title { background: var(--primary-color); color: white; padding: 10px; font-weight: bold; }
     .chapter-row { display: flex; justify-content: space-between; padding: 10px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); align-items: center; }
-    .status-badge { width: 15px; height: 15px; border-radius: 50%; display: inline-block; }
+    .status-badge { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
     .status-green { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
     .status-yellow { background: #f1c40f; box-shadow: 0 0 5px #f1c40f; }
     .status-red { background: #e74c3c; box-shadow: 0 0 5px #e74c3c; }
     .last-date { font-size: 11px; color: #888; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
 </head>
 <body>
@@ -74,23 +75,21 @@
     <div id="setupArea">
         <h2>🔥 Smart Quiz Pro</h2>
         <label style="font-size: 12px; font-weight: bold;">1. विषय चुनें:</label>
-        <select id="subjectSelect" onchange="updateChapters()">
-          <option value="all">-- सभी विषय (Full Syllabus) --</option>
-        </select>
+        <select id="subjectSelect" onchange="updateChapters()"><option value="all">-- सभी विषय (Full Syllabus) --</option></select>
         <label style="font-size: 12px; font-weight: bold;">2. अध्याय चुनें:</label>
-        <select id="chapterSelect">
-          <option value="all">-- सभी अध्याय (Subject Mix) --</option>
-        </select>
+        <select id="chapterSelect"><option value="all">-- सभी अध्याय (Subject Mix) --</option></select>
+        
         <div class="challenge-grid">
           <div><label>सवाल संख्या:</label><input type="number" id="customLimit" placeholder="उदा. 10"></div>
           <div><label>समय (मिनट):</label><input type="number" id="customTime" placeholder="उदा. 5"></div>
         </div>
+        
         <button class="main-btn" onclick="startQuiz()" style="background: #5d6d7e; color: white;">🎯 क्विज़ शुरू करें</button>
         <button class="main-btn" onclick="toggleTracker()" style="background: #3498db; color: white;">📊 Revision Tracker</button>
-        <button id="savedPracticeBtn" class="main-btn saved-practice-btn" onclick="startSavedPractice()" style="display:none;">⭐ सहेजे गए सवालों की प्रैक्टिस</button>
+        <button id="savedPracticeBtn" class="main-btn saved-practice-btn" onclick="startSavedPractice()" style="display:none;">⭐ सहेजे गए सवाल</button>
 
         <div id="trackerArea" class="tracker-card">
-          <h3 style="text-align:center;">📅 रिवीजन का हाल</h3>
+          <h3 style="text-align:center;">📅 रिवीजन स्टेटस</h3>
           <div id="trackerContent"></div>
         </div>
     </div>
@@ -100,6 +99,7 @@
 
   <script>
     let quizData = {}, selectedQuestions = [], wrongQuestions = [], currentIdx = 0, score = 0, timerInterval;
+    let currentSub = "", currentCh = ""; 
     let savedList = JSON.parse(localStorage.getItem("quiz_bookmarks")) || [];
     let revisionDates = JSON.parse(localStorage.getItem("revision_dates")) || {};
 
@@ -122,85 +122,50 @@
       if(s !== "all" && quizData[s]) Object.keys(quizData[s]).forEach(k => c.add(new Option(k, k)));
     }
 
-    function checkSavedBtn() {
-      const btn = document.getElementById("savedPracticeBtn");
-      btn.style.display = savedList.length > 0 ? "block" : "none";
-    }
-
-    // Tracker Toggle and Logic
     function toggleTracker() {
       const area = document.getElementById("trackerArea");
-      if(area.style.display === "block") {
-        area.style.display = "none";
-        return;
-      }
-      area.style.display = "block";
-      renderTracker();
+      area.style.display = (area.style.display === "block") ? "none" : "block";
+      if(area.style.display === "block") renderTracker();
     }
 
     function renderTracker() {
       const content = document.getElementById("trackerContent");
       content.innerHTML = "";
       const now = Date.now();
-
       Object.keys(quizData).forEach(subject => {
         let subHtml = `<div class="subject-group"><div class="subject-title">${subject}</div>`;
         Object.keys(quizData[subject]).forEach(chapter => {
-          const key = `${subject}_${chapter}`;
-          const lastDate = revisionDates[key];
-          let statusClass = "status-red";
-          let dateText = "कभी नहीं";
-
+          const lastDate = revisionDates[`${subject}_${chapter}`];
+          let statusClass = "status-red", dateText = "कभी नहीं";
           if(lastDate) {
             const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
             dateText = new Date(lastDate).toLocaleDateString();
             if(diffDays <= 15) statusClass = "status-green";
             else if(diffDays <= 30) statusClass = "status-yellow";
           }
-
-          subHtml += `
-            <div class="chapter-row">
-              <div>
-                <span class="status-badge ${statusClass}"></span>
-                <span>${chapter}</span>
-              </div>
-              <span class="last-date">${dateText}</span>
-            </div>`;
+          subHtml += `<div class="chapter-row"><div><span class="status-badge ${statusClass}"></span>${chapter}</div><span class="last-date">${dateText}</span></div>`;
         });
-        subHtml += `</div>`;
-        content.innerHTML += subHtml;
+        content.innerHTML += subHtml + `</div>`;
       });
     }
 
     function startQuiz() {
-      const s = document.getElementById("subjectSelect").value, c = document.getElementById("chapterSelect").value;
+      currentSub = document.getElementById("subjectSelect").value;
+      currentCh = document.getElementById("chapterSelect").value;
       let allTempQ = [];
-      
-      // Update Revision Date if specific chapter/subject selected
-      if(s !== "all" && c !== "all") {
-        revisionDates[`${s}_${c}`] = Date.now();
-        localStorage.setItem("revision_dates", JSON.stringify(revisionDates));
-      }
-
-      if (s === "all") {
-        Object.keys(quizData).forEach(subKey => {
-          Object.keys(quizData[subKey]).forEach(chKey => { allTempQ = allTempQ.concat(quizData[subKey][chKey]); });
-        });
-      } else if (c === "all") {
-        Object.keys(quizData[s]).forEach(chKey => { allTempQ = allTempQ.concat(quizData[s][chKey]); });
-      } else { allTempQ = [...quizData[s][c]]; }
+      if (currentSub === "all") {
+        Object.keys(quizData).forEach(s => Object.keys(quizData[s]).forEach(c => allTempQ = allTempQ.concat(quizData[s][c])));
+      } else if (currentCh === "all") {
+        Object.keys(quizData[currentSub]).forEach(c => allTempQ = allTempQ.concat(quizData[currentSub][c]));
+      } else { allTempQ = [...quizData[currentSub][currentCh]]; }
 
       if(allTempQ.length === 0) return alert("सवाल नहीं मिले!");
       allTempQ.sort(() => Math.random() - 0.5);
       const limit = parseInt(document.getElementById("customLimit").value);
       selectedQuestions = (limit > 0 && limit <= allTempQ.length) ? allTempQ.slice(0, limit) : allTempQ;
+      
       const mins = parseInt(document.getElementById("customTime").value);
       if(mins > 0) startTimer(mins);
-      initQuizUI();
-    }
-
-    function startSavedPractice() {
-      selectedQuestions = [...savedList].sort(() => Math.random() - 0.5);
       initQuizUI();
     }
 
@@ -208,7 +173,7 @@
       let time = m * 60; const display = document.getElementById("timerDisplay");
       display.style.display = "block";
       timerInterval = setInterval(() => {
-        let mins = Math.floor(time / 60), secs = time % 60;
+        let mins = Math.floor(time/60), secs = time%60;
         display.innerText = `⏳ ${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
         if (--time < 0) { clearInterval(timerInterval); showFinalResult(); }
       }, 1000);
@@ -229,7 +194,7 @@
         <div id="qCount" style="text-align:right; font-size:14px; font-weight:bold; margin-bottom:5px;"></div>
         <div id="questionBox" class="question-card"></div>
         <div id="optionsBox"></div>
-        <div id="resultBox" class="result" style="text-align:center; font-weight:bold; margin-top:10px;"></div>
+        <div id="resultBox" style="text-align:center; font-weight:bold; margin-top:10px;"></div>
         <button id="nextBtn" onclick="nextQuestionTrigger()">➡️ अगला सवाल</button>`;
     }
 
@@ -239,10 +204,11 @@
       document.getElementById("qCount").innerText = `सवाल: ${currentIdx + 1} / ${selectedQuestions.length}`;
       document.getElementById("questionBox").innerHTML = q.question;
       const bBtn = document.getElementById("bookmarkActionBtn");
-      const isSaved = savedList.some(item => item.question === q.question);
-      isSaved ? bBtn.classList.add("active") : bBtn.classList.remove("active");
+      bBtn.classList.toggle("active", savedList.some(item => item.question === q.question));
+      
       const oBox = document.getElementById("optionsBox"), rBox = document.getElementById("resultBox"), nBtn = document.getElementById("nextBtn");
       oBox.innerHTML = ""; rBox.innerText = ""; nBtn.style.display = "none";
+      
       q.options.forEach(opt => {
         const b = document.createElement("button");
         b.className = "option-btn"; b.innerText = opt;
@@ -256,16 +222,6 @@
       });
     }
 
-    function handleBookmarkClick() {
-      const q = selectedQuestions[currentIdx];
-      const bBtn = document.getElementById("bookmarkActionBtn");
-      const index = savedList.findIndex(item => item.question === q.question);
-      if (index > -1) { savedList.splice(index, 1); bBtn.classList.remove("active"); }
-      else { savedList.push(q); bBtn.classList.add("active"); }
-      localStorage.setItem("quiz_bookmarks", JSON.stringify(savedList));
-      checkSavedBtn();
-    }
-
     function nextQuestionTrigger() {
       currentIdx++;
       currentIdx < selectedQuestions.length ? showQuestion() : showFinalResult();
@@ -276,7 +232,18 @@
       document.getElementById("timerDisplay").style.display = "none";
       document.getElementById("bookmarkActionBtn").style.display = "none";
       document.getElementById("progressBar").style.width = "100%";
+
+      // --- SMART PASS LOGIC ---
+      const passPercentage = (score / selectedQuestions.length) * 100;
+      const isFullQuiz = (currentIdx >= selectedQuestions.length); // क्या आखिरी सवाल तक पहुँचे?
+
+      if (isFullQuiz && passPercentage >= 60 && currentSub !== "all" && currentCh !== "all") {
+        revisionDates[`${currentSub}_${currentCh}`] = Date.now();
+        localStorage.setItem("revision_dates", JSON.stringify(revisionDates));
+      }
+
       let resHTML = `<div class="result"><h3>🏁 रिजल्ट: ${score}/${selectedQuestions.length}</h3>`;
+      if(passPercentage < 60) resHTML += `<p style="color:#e74c3c;">⚠️ स्कोर 60% से कम है, इसलिए ट्रैकर अपडेट नहीं हुआ।</p>`;
       if(wrongQuestions.length > 0) resHTML += `<button class="main-btn" style="background:#f39c12; color:white;" onclick="retryWrong()">🔄 गलत सवाल सुधारें (${wrongQuestions.length})</button>`;
       resHTML += `<button class="main-btn" onclick="goToHome()">🏠 होम</button></div>`;
       document.getElementById("quizArea").innerHTML = resHTML;
@@ -293,11 +260,22 @@
       document.getElementById("bookmarkActionBtn").style.display = "none";
       document.getElementById("quitBtn").style.display = "none";
       document.getElementById("progressBar").style.width = "0%";
-      document.getElementById("trackerArea").style.display = "none"; // Hide tracker on home return
+      document.getElementById("trackerArea").style.display = "none";
     }
 
+    function handleBookmarkClick() {
+      const q = selectedQuestions[currentIdx];
+      const idx = savedList.findIndex(item => item.question === q.question);
+      if (idx > -1) savedList.splice(idx, 1); else savedList.push(q);
+      localStorage.setItem("quiz_bookmarks", JSON.stringify(savedList));
+      checkSavedBtn();
+      document.getElementById("bookmarkActionBtn").classList.toggle("active");
+    }
+
+    function checkSavedBtn() { document.getElementById("savedPracticeBtn").style.display = savedList.length > 0 ? "block" : "none"; }
     function retryWrong() { selectedQuestions = [...wrongQuestions]; initQuizUI(); }
-    function quitQuiz() { if(confirm("रिजल्ट देखें?")) showFinalResult(); }
+    function quitQuiz() { if(confirm("क्विज़ छोड़ें? (ट्रैकर अपडेट नहीं होगा)")) showFinalResult(); }
+    function startSavedPractice() { selectedQuestions = [...savedList]; initQuizUI(); }
   </script>
 </body>
 </html>
