@@ -1,131 +1,98 @@
-let data = {};
+// Mock Data (Isko aap API se bhi connect kar sakte hain)
+const quizData = [
+    {
+        subject: "Science",
+        chapter: "Physics",
+        question: "Light ki speed vacuum mein kitni hoti hai?",
+        options: ["3 x 10^8 m/s", "2 x 10^8 m/s", "3 x 10^10 m/s", "Infinite"],
+        correct: 0
+    },
+    {
+        subject: "Science",
+        chapter: "Biology",
+        question: "Insaan ke shareer ki sabse badi haddi kaunsi hai?",
+        options: ["Stapes", "Femur", "Tibia", "Skull"],
+        correct: 1
+    }
+];
+
 let currentQuestions = [];
-let currentIndex = 0;
-let correctCount = 0;
-let wrongCount = 0;
+let currentQuestionIndex = 0;
+let score = 0;
+let timerInterval;
 
-const subjectSelect = document.getElementById("subjectSelect");
-const chapterSelect = document.getElementById("chapterSelect");
+const setupContainer = document.getElementById('setup-container');
+const quizContainer = document.getElementById('quiz-container');
+const resultContainer = document.getElementById('result-container');
+const questionText = document.getElementById('question-text');
+const optionsContainer = document.getElementById('options-container');
+const nextBtn = document.getElementById('next-btn');
 
-// JSON load
-fetch("mcqs.json")
-  .then(res => res.json())
-  .then(json => {
-    data = json;
-
-    // Subject load
-    for (let subject in data) {
-      let opt = document.createElement("option");
-      opt.value = subject;
-      opt.textContent = subject;
-      subjectSelect.appendChild(opt);
-    }
-  });
-
-// Subject change → Chapter load dynamically
-subjectSelect.addEventListener("change", () => {
-  chapterSelect.innerHTML = `<option value="">-- अध्याय चुनें --</option>`;
-
-  const subject = subjectSelect.value;
-  if (!subject) return;
-
-  const subjectData = data[subject];
-
-  // For each part (प्राचीन भारत / मध्यकालीन भारत etc.)
-  for (let part in subjectData) {
-    const chapters = subjectData[part];
-    for (let ch in chapters) {
-      let opt = document.createElement("option");
-      opt.value = part + "||" + ch; // unique value
-      opt.textContent = part + " - " + ch;
-      chapterSelect.appendChild(opt);
-    }
-  }
-});
-
-// Start Quiz
 function startQuiz() {
-  correctCount = 0;
-  wrongCount = 0;
-  currentIndex = 0;
+    const selectedSub = document.getElementById('subject-select').value;
+    const selectedChap = document.getElementById('chapter-select').value;
 
-  const subject = subjectSelect.value;
-  const chapterVal = chapterSelect.value;
+    // Filter questions based on selection
+    currentQuestions = quizData.filter(q => q.subject === selectedSub || q.chapter === selectedChap);
+    
+    if (currentQuestions.length === 0) {
+        alert("Is category mein abhi sawal nahi hain!");
+        return;
+    }
 
-  if (!subject || !chapterVal) {
-    alert("पहले Subject और Chapter चुनें");
-    return;
-  }
-
-  // Split the value to get part and chapter
-  const parts = chapterVal.split("||");
-  const part = parts[0];
-  const chapter = parts[1];
-
-  currentQuestions = [...data[subject][part][chapter]];
-
-  shuffle(currentQuestions);
-  document.getElementById("quizArea").style.display = "block";
-  showQuestion();
-}
-
-// Show question
-function showQuestion() {
-  const q = currentQuestions[currentIndex];
-
-  document.getElementById("questionBox").innerHTML =
-    `<b>Q${currentIndex + 1}:</b> ${q.question}`;
-
-  const box = document.getElementById("optionsBox");
-  box.innerHTML = "";
-
-  document.getElementById("resultBox").innerText = "";
-  document.getElementById("nextBtn").style.display = "none";
-
-  q.options.forEach(opt => {
-    const btn = document.createElement("button");
-    btn.className = "option-btn";
-    btn.textContent = opt;
-
-    btn.onclick = () => {
-      if (opt === q.answer) {
-        correctCount++;
-        document.getElementById("resultBox").innerText = "✅ सही उत्तर!";
-      } else {
-        wrongCount++;
-        document.getElementById("resultBox").innerText =
-          `❌ गलत! सही उत्तर: ${q.answer}`;
-      }
-      document.getElementById("nextBtn").style.display = "block";
-    };
-
-    box.appendChild(btn);
-  });
-}
-
-// Next question
-function showNext() {
-  currentIndex++;
-
-  if (currentIndex < currentQuestions.length) {
+    setupContainer.classList.add('hidden');
+    quizContainer.classList.remove('hidden');
     showQuestion();
-  } else {
-    document.getElementById("questionBox").innerHTML =
-      "🎉 आपने सभी प्रश्न हल कर लिए!";
-    document.getElementById("optionsBox").innerHTML = "";
-    document.getElementById("resultBox").innerHTML = `
-✅ सही जवाब: ${correctCount}<br>
-❌ गलत जवाब: ${wrongCount}<br>
-📊 कुल प्रश्न: ${currentQuestions.length}
-`;
-    document.getElementById("nextBtn").style.display = "none";
-  }
 }
 
-// Shuffle
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
+function showQuestion() {
+    const q = currentQuestions[currentQuestionIndex];
+    questionText.innerText = q.question;
+    optionsContainer.innerHTML = '';
+    nextBtn.classList.add('hidden');
+    
+    // Update Progress
+    document.getElementById('question-number').innerText = `Q ${currentQuestionIndex + 1}/${currentQuestions.length}`;
+    document.getElementById('progress-bar').style.width = `${((currentQuestionIndex) / currentQuestions.length) * 100}%`;
+
+    q.options.forEach((opt, index) => {
+        const btn = document.createElement('button');
+        btn.innerText = opt;
+        btn.classList.add('btn', 'option-btn');
+        btn.onclick = () => checkAnswer(btn, index);
+        optionsContainer.appendChild(btn);
+    });
 }
+
+function checkAnswer(selectedBtn, index) {
+    const correctIdx = currentQuestions[currentQuestionIndex].correct;
+    const allBtns = optionsContainer.querySelectorAll('button');
+
+    if (index === correctIdx) {
+        selectedBtn.classList.add('correct');
+        score++;
+    } else {
+        selectedBtn.classList.add('wrong');
+        allBtns[correctIdx].classList.add('correct'); // Sahi jawab dikhao
+    }
+
+    // Disable all buttons after click
+    allBtns.forEach(btn => btn.disabled = true);
+    nextBtn.classList.remove('hidden');
+}
+
+function loadNextQuestion() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < currentQuestions.length) {
+        showQuestion();
+    } else {
+        showResult();
+    }
+}
+
+function showResult() {
+    quizContainer.classList.add('hidden');
+    resultContainer.classList.remove('hidden');
+    document.getElementById('final-score').innerText = `Aapka Total Score: ${score} / ${currentQuestions.length}`;
+}
+
