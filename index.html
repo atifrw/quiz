@@ -1,46 +1,102 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔥 Premium MCQ Quiz</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik&display=swap" rel="stylesheet">
-  <style>
-    /* पुरानी CSS यहाँ रहेगी (कोई बदलाव नहीं) */
-    body { font-family: 'Rubik', sans-serif; background: linear-gradient(to right, #dbe6f6, #c5796d); margin: 0; padding: 20px; }
-    .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: fadeIn 0.5s ease-in; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    h2 { text-align: center; color: #333; font-size: 28px; }
-    select, button { padding: 12px; font-size: 18px; margin-bottom: 15px; width: 100%; border-radius: 10px; border: 1px solid #ccc; background-color: #f9f9f9; }
-    .question-card { background: #f0f0f0; border-left: 6px solid #4e54c8; padding: 20px; border-radius: 12px; margin-bottom: 20px; transition: all 0.3s ease; font-size: 24px; }
-    .option-btn { display: block; background: #ffffff; border: 2px solid #4e54c8; color: #4e54c8; font-weight: 600; padding: 12px; margin: 12px 0; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 100%; text-align: left; font-size: 18px; }
-    .option-btn:hover { background: #4e54c8; color: white; }
-    .result { font-weight: bold; font-size: 20px; margin-top: 15px; color: #000; text-align: center; }
-    #nextBtn { display: none; background: #28a745; color: white; border: none; text-align: center; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>🔥 Premium Quiz App</h2>
-    
-    <select id="subjectSelect" onchange="updateChapters()">
-      <option value="">-- पहले विषय चुनें (Subject) --</option>
-    </select>
+let data = {};
+let currentQuestions = [];
+let currentIndex = 0;
+let correctCount = 0;
+let wrongCount = 0;
 
-    <select id="chapterSelect">
-      <option value="">-- अध्याय चुनें (Chapter) --</option>
-    </select>
+fetch("mcqs (1).json")
+  .then(res => res.json())
+  .then(json => {
+    data = json;
+    const subSelect = document.getElementById("subjectSelect");
+    Object.keys(data).forEach(sub => {
+      const opt = document.createElement("option");
+      opt.value = sub;
+      opt.textContent = sub;
+      subSelect.appendChild(opt);
+    });
+  });
 
-    <button onclick="startQuiz()">🎯 क्विज़ शुरू करें</button>
+function updateChapters() {
+  const subject = document.getElementById("subjectSelect").value;
+  const chapSelect = document.getElementById("chapterSelect");
+  chapSelect.innerHTML = "<option value=''>-- अध्याय चुनें --</option>";
+  if (subject && data[subject]) {
+    Object.keys(data[subject]).forEach(ch => {
+      const opt = document.createElement("option");
+      opt.value = ch;
+      opt.textContent = ch;
+      chapSelect.appendChild(opt);
+    });
+  }
+}
 
-    <div id="quizArea" style="display:none;">
-      <div id="questionBox" class="question-card"></div>
-      <div id="optionsBox"></div>
-      <div id="resultBox" class="result"></div>
-      <button id="nextBtn" class="option-btn" onclick="showNext()">➡️ अगला सवाल</button>
-    </div>
-  </div>
-  <script src="script.js"></script>
-</body>
-</html>
+function startQuiz() {
+  const sub = document.getElementById("subjectSelect").value;
+  const ch = document.getElementById("chapterSelect").value;
+  if (!sub || !ch) { alert("कृपया चुनें!"); return; }
 
+  correctCount = 0;
+  wrongCount = 0;
+  currentQuestions = [...data[sub][ch]];
+  shuffle(currentQuestions);
+  currentIndex = 0;
+  document.getElementById("quizArea").style.display = "block";
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = currentQuestions[currentIndex];
+  document.getElementById("questionBox").innerHTML = `<b>Q${currentIndex+1}:</b> ${q.question}`;
+  const box = document.getElementById("optionsBox");
+  box.innerHTML = "";
+  document.getElementById("resultBox").innerText = "";
+  
+  // बटन को छुपाने का सही तरीका
+  const nextBtn = document.getElementById("nextBtn");
+  nextBtn.style.setProperty('display', 'none', 'important');
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = opt;
+    btn.onclick = () => {
+      const allBtns = document.querySelectorAll(".option-btn");
+      allBtns.forEach(b => b.style.pointerEvents = "none");
+
+      if (opt === q.answer) {
+        correctCount++;
+        document.getElementById("resultBox").innerHTML = "<p style='color:green'>✅ सही!</p>";
+      } else {
+        wrongCount++;
+        document.getElementById("resultBox").innerHTML = `<p style='color:red'>❌ गलत! सही: ${q.answer}</p>`;
+      }
+      
+      // यहाँ बटन दिखेगा
+      nextBtn.style.setProperty('display', 'block', 'important');
+    };
+    box.appendChild(btn);
+  });
+}
+
+function showNext() {
+  currentIndex++;
+  if (currentIndex < currentQuestions.length) {
+    showQuestion();
+  } else {
+    document.getElementById("quizArea").innerHTML = `
+      <div class="result">
+        <h3>🎉 क्विज़ पूरा हुआ!</h3>
+        <p>सही: ${correctCount}</p>
+        <p>गलत: ${wrongCount}</p>
+        <button onclick="location.reload()">दोबारा शुरू करें</button>
+      </div>`;
+  }
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
