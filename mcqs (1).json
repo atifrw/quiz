@@ -1,47 +1,25 @@
 {
   "quizzes": [
     {
-      "subject": "Science",
-      "chapter": "Physics - Light",
-      "question": "Light ki speed vacuum mein kitni hoti hai?",
-      "options": ["3 x 10^8 m/s", "2 x 10^8 m/s", "3 x 10^10 m/s", "Infinite"],
-      "correct": 0
-    },
-    {
-      "subject": "Science",
-      "chapter": "Biology - Cells",
-      "question": "Insaan ke shareer ki sabse badi haddi kaunsi hai?",
-      "options": ["Stapes", "Femur", "Tibia", "Skull"],
+      "subject": "General Knowledge",
+      "chapter": "Bharat",
+      "question": "Bharat ki Rajdhani kya hai?",
+      "options": ["Mumbai", "Delhi", "Kolkata", "Chennai"],
       "correct": 1
     },
     {
-      "subject": "History",
-      "chapter": "Indian Independence",
-      "question": "Bharat kab azad hua tha?",
-      "options": ["1942", "1950", "1947", "1935"],
+      "subject": "General Knowledge",
+      "chapter": "Bharat",
+      "question": "Bharat ka Rashtriya Pakshi kaun hai?",
+      "options": ["Tota", "Kabutar", "Mor", "Baaz"],
       "correct": 2
     },
     {
-      "subject": "History",
-      "chapter": "Mughal Empire",
-      "question": "Panipat ki pehli ladayi kab hui thi?",
-      "options": ["1526", "1556", "1761", "1520"],
-      "correct": 0
-    },
-    {
-      "subject": "Computer",
-      "chapter": "Basics",
-      "question": "Computer ka brain kise kaha jata hai?",
-      "options": ["RAM", "Hard Disk", "CPU", "Monitor"],
-      "correct": 2
-    },
-    {
-      "subject": "Computer",
-      "chapter": "Internet",
-      "question": "WWW ka full form kya hai?",
-      "options": ["World Wide Web", "World Whole Web", "Wide World Web", "Web Wide World"],
-      "correct": 0
+      "subject": "Maths",
+      "chapter": "Geometry",
+      "question": "Ek Triangle ke kitne kon (angles) hote hain?",
+      "options": ["2", "3", "4", "5"],
+      "correct": 1
     }
   ]
 }
-
