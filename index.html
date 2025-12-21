@@ -3,31 +3,127 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔥 Premium MCQ Quiz</title>
+  <title>📖 Study Quiz - Eye Care Mode</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Rubik', sans-serif; background: linear-gradient(to right, #dbe6f6, #c5796d); margin: 0; padding: 20px; }
-    .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    h2 { text-align: center; color: #333; font-size: 28px; }
-    select, button { padding: 12px; font-size: 18px; margin-bottom: 15px; width: 100%; border-radius: 10px; border: 1px solid #ccc; background-color: #f9f9f9; }
-    .question-card { background: #f0f0f0; border-left: 6px solid #4e54c8; padding: 20px; border-radius: 12px; margin-bottom: 20px; font-size: 24px; }
-    .option-btn { display: block; background: #ffffff; border: 2px solid #4e54c8; color: #4e54c8; font-weight: 600; padding: 12px; margin: 12px 0; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 100%; text-align: left; font-size: 18px; }
-    .option-btn:hover { background: #4e54c8; color: white; }
-    .result { font-weight: bold; font-size: 20px; margin-top: 15px; color: #000; text-align: center; }
+    /* आँखों के लिए सुकूनदेह रंग (Light Mode) */
+    :root {
+      --bg-color: #f0f2f5;
+      --card-bg: #ffffff;
+      --text-color: #2c3e50;
+      --question-bg: #eef2f7;
+      --border-color: #dcdde1;
+      --btn-bg: #f8f9fa;
+      --primary-color: #5d6d7e;
+    }
+
+    /* Dark Mode के रंग */
+    [data-theme="dark"] {
+      --bg-color: #1a1a1a;
+      --card-bg: #2d2d2d;
+      --text-color: #e0e0e0;
+      --question-bg: #3d3d3d;
+      --border-color: #444;
+      --btn-bg: #3a3a3a;
+      --primary-color: #8da2b5;
+    }
+
+    body { 
+      font-family: 'Rubik', sans-serif; 
+      background-color: var(--bg-color); 
+      color: var(--text-color);
+      margin: 0; 
+      padding: 20px; 
+      transition: 0.3s;
+    }
+
+    .container { 
+      max-width: 700px; 
+      margin: auto; 
+      background: var(--card-bg); 
+      padding: 30px; 
+      border-radius: 20px; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+    }
+
+    /* Dark Mode Button */
+    .theme-toggle {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+    #themeBtn {
+      width: auto;
+      padding: 8px 15px;
+      font-size: 14px;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    h2 { text-align: center; margin-top: 0; }
+
+    select, button { 
+      padding: 14px; 
+      font-size: 17px; 
+      margin-bottom: 15px; 
+      width: 100%; 
+      border-radius: 10px; 
+      border: 1px solid var(--border-color); 
+      background-color: var(--btn-bg); 
+      color: var(--text-color);
+      cursor: pointer;
+    }
+
+    .question-card { 
+      background: var(--question-bg); 
+      border-left: 6px solid var(--primary-color); 
+      padding: 25px; 
+      border-radius: 12px; 
+      margin-bottom: 20px; 
+      font-size: 22px; 
+      line-height: 1.6;
+    }
+
+    .option-btn { 
+      display: block; 
+      background: var(--card-bg); 
+      border: 2px solid var(--border-color); 
+      color: var(--text-color); 
+      font-weight: 500; 
+      padding: 14px; 
+      margin: 12px 0; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      width: 100%; 
+      text-align: left; 
+      font-size: 18px; 
+      transition: 0.2s; 
+    }
+
+    .option-btn:hover { 
+      background: var(--primary-color); 
+      color: white; 
+    }
+
+    .result { font-weight: bold; font-size: 20px; margin-top: 15px; text-align: center; }
     
-    /* Next Button: Iska display: none JS se hat jayega */
     #nextBtn { 
       display: none; 
-      background: #28a745 !important; 
+      background: #576574 !important; 
       color: white !important; 
       border: none; 
       text-align: center; 
       margin-top: 20px; 
-      width: 100%;
     }
   </style>
 </head>
 <body>
+
+  <div class="theme-toggle">
+    <button id="themeBtn" onclick="toggleTheme()">🌙 डार्क मोड</button>
+  </div>
+
   <div class="container">
     <h2>🔥 Premium Quiz App</h2>
     
@@ -39,7 +135,7 @@
       <option value="">-- अध्याय चुनें (Chapter) --</option>
     </select>
 
-    <button onclick="startQuiz()">🎯 क्विज़ शुरू करें</button>
+    <button onclick="startQuiz()" style="background: #5d6d7e; color: white; border: none;">🎯 क्विज़ शुरू करें</button>
 
     <div id="quizArea" style="display:none;">
       <div id="questionBox" class="question-card"></div>
@@ -55,15 +151,27 @@
     let currentIdx = 0;
     let score = 0;
 
-    // 1. Load JSON (Naming fix)
+    // Dark Mode Logic
+    function toggleTheme() {
+      const body = document.body;
+      const btn = document.getElementById("themeBtn");
+      if (body.hasAttribute("data-theme")) {
+        body.removeAttribute("data-theme");
+        btn.innerText = "🌙 डार्क मोड";
+      } else {
+        body.setAttribute("data-theme", "dark");
+        btn.innerText = "☀️ लाइट मोड";
+      }
+    }
+
+    // Load JSON
     fetch("mcqs (1).json?v=" + Math.random())
       .then(res => res.json())
       .then(json => {
         quizData = json;
         const subSel = document.getElementById("subjectSelect");
         Object.keys(quizData).forEach(s => {
-          let op = new Option(s, s);
-          subSel.add(op);
+          subSel.add(new Option(s, s));
         });
       });
 
@@ -84,7 +192,7 @@
       if(!s || !c) return alert("चुनें!");
       
       selectedQuestions = [...quizData[s][c]];
-      selectedQuestions.sort(() => Math.random() - 0.5); // Shuffle
+      selectedQuestions.sort(() => Math.random() - 0.5);
       currentIdx = 0;
       score = 0;
       document.getElementById("quizArea").style.display = "block";
@@ -100,7 +208,7 @@
       
       oBox.innerHTML = "";
       rBox.innerText = "";
-      nBtn.style.display = "none"; // Hide next button
+      nBtn.style.display = "none";
 
       q.options.forEach(opt => {
         const b = document.createElement("button");
@@ -112,11 +220,11 @@
           
           if(opt === q.answer) {
             score++;
-            rBox.innerHTML = "<span style='color:green'>✅ सही उत्तर!</span>";
+            rBox.innerHTML = "<span style='color:#27ae60'>✅ सही उत्तर!</span>";
           } else {
-            rBox.innerHTML = `<span style='color:red'>❌ गलत! सही: ${q.answer}</span>`;
+            rBox.innerHTML = `<span style='color:#e74c3c'>❌ गलत! सही: ${q.answer}</span>`;
           }
-          nBtn.style.display = "block"; // SHOW NEXT BUTTON
+          nBtn.style.display = "block";
         };
         oBox.appendChild(b);
       });
@@ -131,7 +239,7 @@
           <div class="result">
             <h3>🎉 क्विज़ पूरा हुआ!</h3>
             <p>आपका स्कोर: ${score} / ${selectedQuestions.length}</p>
-            <button onclick="location.reload()">🔄 दोबारा शुरू करें</button>
+            <button onclick="location.reload()" style="background:#5d6d7e; color:white;">🔄 दोबारा शुरू करें</button>
           </div>`;
       }
     }
