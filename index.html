@@ -44,7 +44,10 @@
     
     #nextBtn { display: none; background: #28a745 !important; color: white !important; border: none; text-align: center; margin-top: 15px; width: 100%; padding: 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-    /* Tracker UI */
+    /* Backup UI styling */
+    .backup-section { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color); }
+    .backup-small-btn { flex: 1; padding: 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 8px; border: 1px solid var(--border-color); background: var(--btn-bg); color: var(--text-color); }
+
     .tracker-card { display: none; margin-top: 10px; }
     .subject-group { margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
     .subject-title { background: var(--primary-color); color: white; padding: 10px; font-weight: bold; }
@@ -85,7 +88,13 @@
         <button id="weakAreasBtn" class="main-btn" style="background: #e67e22; color: white; display: none;" onclick="startWeakAreasQuiz()">🔄 Improve Weak Areas (<span id="weakCount">0</span>)</button>
 
         <button class="main-btn" onclick="toggleTracker()" style="background: #3498db; color: white;">📊 Revision Tracker</button>
-        <button id="savedPracticeBtn" class="main-btn" style="background:#f1c40f; color:#000; display:none;" onclick="startSavedPractice()">⭐ Save Question</button>
+        <button id="savedPracticeBtn" class="main-btn" style="background:#f1c40f; color:#000; display:none;" onclick="startSavedPractice()">⭐ Saved Questions</button>
+
+        <div class="backup-section">
+          <button class="backup-small-btn" onclick="exportQuizData()">📤 Backup Data</button>
+          <button class="backup-small-btn" onclick="document.getElementById('importFile').click()">📥 Restore Data</button>
+          <input type="file" id="importFile" style="display:none" onchange="importQuizData(event)">
+        </div>
 
         <div id="trackerArea" class="tracker-card">
           <h3 style="text-align:center;">📅 रिवीजन स्टेटस</h3>
@@ -102,13 +111,43 @@
     let currentSub = "", currentCh = ""; 
     let savedList = JSON.parse(localStorage.getItem("quiz_bookmarks")) || [];
     let revisionDates = JSON.parse(localStorage.getItem("revision_dates")) || {};
-    
-    // Added Variables for Weak Areas
     let weakList = JSON.parse(localStorage.getItem("weak_questions")) || [];
     let isWeakMode = false;
 
-    // Added updateWeakBtn to onload
     window.onload = () => { checkSavedBtn(); updateWeakBtn(); };
+
+    // --- NEW: Backup & Restore Functions ---
+    function exportQuizData() {
+      const fullData = {
+        bookmarks: savedList,
+        tracker: revisionDates,
+        weak: weakList
+      };
+      const blob = new Blob([JSON.stringify(fullData)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `my_quiz_backup_${new Date().toLocaleDateString()}.json`;
+      a.click();
+    }
+
+    function importQuizData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if(confirm("क्या आप यह डेटा लोड करना चाहते हैं? आपकी वर्तमान प्रोग्रेस बदल जाएगी।")) {
+            localStorage.setItem("quiz_bookmarks", JSON.stringify(imported.bookmarks || []));
+            localStorage.setItem("revision_dates", JSON.stringify(imported.tracker || {}));
+            localStorage.setItem("weak_questions", JSON.stringify(imported.weak || []));
+            location.reload(); 
+          }
+        } catch (err) { alert("गलत फाइल! कृपया बैकअप फाइल चुनें।"); }
+      };
+      reader.readAsText(file);
+    }
+    // ---------------------------------------
 
     function toggleTheme() {
       const b = document.body;
@@ -155,7 +194,7 @@
     }
 
     function startQuiz() {
-      isWeakMode = false; // Normal mode
+      isWeakMode = false;
       currentSub = document.getElementById("subjectSelect").value;
       currentCh = document.getElementById("chapterSelect").value;
       let allTempQ = [];
@@ -175,7 +214,6 @@
       initQuizUI();
     }
 
-    // Added Function: Start Weak Areas Quiz
     function startWeakAreasQuiz() {
       if(weakList.length === 0) return;
       isWeakMode = true; 
@@ -232,7 +270,6 @@
           
           if(opt === q.answer) { 
             score++; rBox.innerHTML = "<span style='color:#27ae60'>✅ सही!</span>"; 
-            // If correct in Weak Mode, remove from list
             if(isWeakMode) {
               weakList = weakList.filter(item => item.question !== q.question);
               localStorage.setItem("weak_questions", JSON.stringify(weakList));
@@ -240,7 +277,6 @@
           } else { 
             rBox.innerHTML = `<span style='color:#e74c3c'>❌ गलत! सही: ${q.answer}</span>`; 
             wrongQuestions.push(q); 
-            // Add to Weak Areas if wrong
             if(!weakList.some(item => item.question === q.question)) {
               weakList.push(q);
               localStorage.setItem("weak_questions", JSON.stringify(weakList));
@@ -275,7 +311,7 @@
       resHTML += `<button class="main-btn" onclick="goToHome()">🏠 होम</button></div>`;
       document.getElementById("quizArea").innerHTML = resHTML;
       document.getElementById("quitBtn").style.display = "none";
-      updateWeakBtn(); // Refresh count
+      updateWeakBtn();
     }
 
     function goToHome() {
@@ -289,10 +325,9 @@
       document.getElementById("quitBtn").style.display = "none";
       document.getElementById("progressBar").style.width = "0%";
       document.getElementById("trackerArea").style.display = "none";
-      updateWeakBtn(); // Refresh count
+      updateWeakBtn();
     }
 
-    // Added Function: Update Weak Areas Button Visibility
     function updateWeakBtn() {
       const btn = document.getElementById("weakAreasBtn"), count = document.getElementById("weakCount");
       btn.style.display = weakList.length > 0 ? "block" : "none";
@@ -310,7 +345,7 @@
 
     function checkSavedBtn() { document.getElementById("savedPracticeBtn").style.display = savedList.length > 0 ? "block" : "none"; }
     function retryWrong() { selectedQuestions = [...wrongQuestions]; initQuizUI(); }
-    function quitQuiz() { if(confirm("क्विज़ छोड़ें? (अगर 80% सवाल नहीं हुए तो ट्रैकर अपडेट नहीं होगा)")) showFinalResult(); }
+    function quitQuiz() { if(confirm("क्विज़ छोड़ें?")) showFinalResult(); }
     function startSavedPractice() { isWeakMode = false; selectedQuestions = [...savedList]; initQuizUI(); }
   </script>
 </body>
