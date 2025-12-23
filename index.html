@@ -81,6 +81,9 @@
         </div>
         
         <button class="main-btn" onclick="startQuiz()" style="background: #5d6d7e; color: white;">🎯 क्विज़ शुरू करें</button>
+        
+        <button id="weakAreasBtn" class="main-btn" style="background: #e67e22; color: white; display: none;" onclick="startWeakAreasQuiz()">🔄 Improve Weak Areas (<span id="weakCount">0</span>)</button>
+
         <button class="main-btn" onclick="toggleTracker()" style="background: #3498db; color: white;">📊 Revision Tracker</button>
         <button id="savedPracticeBtn" class="main-btn" style="background:#f1c40f; color:#000; display:none;" onclick="startSavedPractice()">⭐ सहेजे गए सवाल</button>
 
@@ -95,12 +98,17 @@
 
   <script>
     let quizData = {}, selectedQuestions = [], wrongQuestions = [], currentIdx = 0, score = 0, timerInterval;
-    let questionsAttempted = 0; // Track how many questions answered
+    let questionsAttempted = 0; 
     let currentSub = "", currentCh = ""; 
     let savedList = JSON.parse(localStorage.getItem("quiz_bookmarks")) || [];
     let revisionDates = JSON.parse(localStorage.getItem("revision_dates")) || {};
+    
+    // Added Variables for Weak Areas
+    let weakList = JSON.parse(localStorage.getItem("weak_questions")) || [];
+    let isWeakMode = false;
 
-    window.onload = checkSavedBtn;
+    // Added updateWeakBtn to onload
+    window.onload = () => { checkSavedBtn(); updateWeakBtn(); };
 
     function toggleTheme() {
       const b = document.body;
@@ -147,6 +155,7 @@
     }
 
     function startQuiz() {
+      isWeakMode = false; // Normal mode
       currentSub = document.getElementById("subjectSelect").value;
       currentCh = document.getElementById("chapterSelect").value;
       let allTempQ = [];
@@ -163,6 +172,14 @@
       
       const mins = parseInt(document.getElementById("customTime").value);
       if(mins > 0) startTimer(mins);
+      initQuizUI();
+    }
+
+    // Added Function: Start Weak Areas Quiz
+    function startWeakAreasQuiz() {
+      if(weakList.length === 0) return;
+      isWeakMode = true; 
+      selectedQuestions = [...weakList].sort(() => Math.random() - 0.5);
       initQuizUI();
     }
 
@@ -210,10 +227,25 @@
         const b = document.createElement("button");
         b.className = "option-btn"; b.innerText = opt;
         b.onclick = () => {
-          questionsAttempted++; // Increment attempt
+          questionsAttempted++;
           document.querySelectorAll(".option-btn").forEach(btn => btn.style.pointerEvents = "none");
-          if(opt === q.answer) { score++; rBox.innerHTML = "<span style='color:#27ae60'>✅ सही!</span>"; }
-          else { rBox.innerHTML = `<span style='color:#e74c3c'>❌ गलत! सही: ${q.answer}</span>`; wrongQuestions.push(q); }
+          
+          if(opt === q.answer) { 
+            score++; rBox.innerHTML = "<span style='color:#27ae60'>✅ सही!</span>"; 
+            // If correct in Weak Mode, remove from list
+            if(isWeakMode) {
+              weakList = weakList.filter(item => item.question !== q.question);
+              localStorage.setItem("weak_questions", JSON.stringify(weakList));
+            }
+          } else { 
+            rBox.innerHTML = `<span style='color:#e74c3c'>❌ गलत! सही: ${q.answer}</span>`; 
+            wrongQuestions.push(q); 
+            // Add to Weak Areas if wrong
+            if(!weakList.some(item => item.question === q.question)) {
+              weakList.push(q);
+              localStorage.setItem("weak_questions", JSON.stringify(weakList));
+            }
+          }
           nBtn.style.display = "block";
         };
         oBox.appendChild(b);
@@ -231,19 +263,19 @@
       document.getElementById("bookmarkActionBtn").style.display = "none";
       document.getElementById("progressBar").style.width = "100%";
 
-      // --- ATTEMPT LOGIC (80%) ---
       const attemptPercent = (questionsAttempted / selectedQuestions.length) * 100;
-      if (attemptPercent >= 80 && currentSub !== "all" && currentCh !== "all") {
+      if (!isWeakMode && attemptPercent >= 80 && currentSub !== "all" && currentCh !== "all") {
         revisionDates[`${currentSub}_${currentCh}`] = Date.now();
         localStorage.setItem("revision_dates", JSON.stringify(revisionDates));
       }
 
       let resHTML = `<div class="result"><h3>🏁 रिजल्ट: ${score}/${selectedQuestions.length}</h3>`;
-      if(attemptPercent < 80) resHTML += `<p style="color:#e74c3c;">⚠️ आपने 80% सवाल हल नहीं किए, ट्रैकर अपडेट नहीं हुआ।</p>`;
+      if(!isWeakMode && attemptPercent < 80) resHTML += `<p style="color:#e74c3c;">⚠️ आपने 80% सवाल हल नहीं किए, ट्रैकर अपडेट नहीं हुआ।</p>`;
       if(wrongQuestions.length > 0) resHTML += `<button class="main-btn" style="background:#f39c12; color:white;" onclick="retryWrong()">🔄 गलत सवाल सुधारें (${wrongQuestions.length})</button>`;
       resHTML += `<button class="main-btn" onclick="goToHome()">🏠 होम</button></div>`;
       document.getElementById("quizArea").innerHTML = resHTML;
       document.getElementById("quitBtn").style.display = "none";
+      updateWeakBtn(); // Refresh count
     }
 
     function goToHome() {
@@ -257,6 +289,14 @@
       document.getElementById("quitBtn").style.display = "none";
       document.getElementById("progressBar").style.width = "0%";
       document.getElementById("trackerArea").style.display = "none";
+      updateWeakBtn(); // Refresh count
+    }
+
+    // Added Function: Update Weak Areas Button Visibility
+    function updateWeakBtn() {
+      const btn = document.getElementById("weakAreasBtn"), count = document.getElementById("weakCount");
+      btn.style.display = weakList.length > 0 ? "block" : "none";
+      count.innerText = weakList.length;
     }
 
     function handleBookmarkClick() {
@@ -271,7 +311,7 @@
     function checkSavedBtn() { document.getElementById("savedPracticeBtn").style.display = savedList.length > 0 ? "block" : "none"; }
     function retryWrong() { selectedQuestions = [...wrongQuestions]; initQuizUI(); }
     function quitQuiz() { if(confirm("क्विज़ छोड़ें? (अगर 80% सवाल नहीं हुए तो ट्रैकर अपडेट नहीं होगा)")) showFinalResult(); }
-    function startSavedPractice() { selectedQuestions = [...savedList]; initQuizUI(); }
+    function startSavedPractice() { isWeakMode = false; selectedQuestions = [...savedList]; initQuizUI(); }
   </script>
 </body>
 </html>
