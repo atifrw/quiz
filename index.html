@@ -44,6 +44,7 @@
     
     #nextBtn { display: none; background: #28a745 !important; color: white !important; border: none; text-align: center; margin-top: 15px; width: 100%; padding: 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
+    /* Backup UI styling */
     .backup-section { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color); }
     .backup-small-btn { flex: 1; padding: 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 8px; border: 1px solid var(--border-color); background: var(--btn-bg); color: var(--text-color); }
 
@@ -74,9 +75,6 @@
 
     <div id="setupArea">
         <h2>🔥 Smart Quiz Pro</h2>
-        
-        <button id="resumeBtn" class="main-btn" style="background: #8e44ad; color: white; display: none;" onclick="resumeQuiz()">🕒 पिछला क्विज़ जारी रखें</button>
-
         <select id="subjectSelect" onchange="updateChapters()"><option value="all">-- सभी विषय --</option></select>
         <select id="chapterSelect"><option value="all">-- सभी अध्याय --</option></select>
         
@@ -116,67 +114,9 @@
     let weakList = JSON.parse(localStorage.getItem("weak_questions")) || [];
     let isWeakMode = false;
 
-    window.onload = () => { 
-        checkSavedBtn(); 
-        updateWeakBtn(); 
-        checkResumeStatus(); // Check if we can resume on load
-    };
+    window.onload = () => { checkSavedBtn(); updateWeakBtn(); };
 
-    // --- RESUME SESSION LOGIC ---
-    function checkResumeStatus() {
-      const savedSession = localStorage.getItem("last_quiz_session");
-      const rBtn = document.getElementById("resumeBtn");
-      if (savedSession) {
-        const session = JSON.parse(savedSession);
-        rBtn.innerText = `🕒 पिछला क्विज़ जारी रखें (सवाल ${session.currentIdx + 1})`;
-        rBtn.style.display = "block";
-      } else {
-        rBtn.style.display = "none";
-      }
-    }
-
-    function saveProgress() {
-      const sessionData = {
-        selectedQuestions,
-        currentIdx,
-        score,
-        questionsAttempted,
-        currentSub,
-        currentCh,
-        isWeakMode
-      };
-      localStorage.setItem("last_quiz_session", JSON.stringify(sessionData));
-    }
-
-    function clearSavedSession() {
-      localStorage.removeItem("last_quiz_session");
-      document.getElementById("resumeBtn").style.display = "none";
-    }
-
-    function resumeQuiz() {
-      const savedSession = localStorage.getItem("last_quiz_session");
-      if (savedSession) {
-        const session = JSON.parse(savedSession);
-        selectedQuestions = session.selectedQuestions;
-        currentIdx = session.currentIdx;
-        score = session.score;
-        questionsAttempted = session.questionsAttempted;
-        currentSub = session.currentSub;
-        currentCh = session.currentCh;
-        isWeakMode = session.isWeakMode;
-
-        document.getElementById("setupArea").style.display = "none";
-        document.getElementById("pCont").style.display = "block";
-        document.getElementById("quizArea").style.display = "block";
-        document.getElementById("quitBtn").style.display = "block";
-        document.getElementById("bookmarkActionBtn").style.display = "flex";
-        
-        renderLayout();
-        showQuestion();
-      }
-    }
-    // ----------------------------
-
+    // --- NEW: Backup & Restore Functions ---
     function exportQuizData() {
       const fullData = {
         bookmarks: savedList,
@@ -207,6 +147,7 @@
       };
       reader.readAsText(file);
     }
+    // ---------------------------------------
 
     function toggleTheme() {
       const b = document.body;
@@ -253,7 +194,6 @@
     }
 
     function startQuiz() {
-      clearSavedSession(); // New manual quiz clears old resume data
       isWeakMode = false;
       currentSub = document.getElementById("subjectSelect").value;
       currentCh = document.getElementById("chapterSelect").value;
@@ -275,7 +215,6 @@
     }
 
     function startWeakAreasQuiz() {
-      clearSavedSession();
       if(weakList.length === 0) return;
       isWeakMode = true; 
       selectedQuestions = [...weakList].sort(() => Math.random() - 0.5);
@@ -344,7 +283,6 @@
             }
           }
           nBtn.style.display = "block";
-          saveProgress(); // PROGRESS SAVED AFTER ANSWERING
         };
         oBox.appendChild(b);
       });
@@ -352,16 +290,10 @@
 
     function nextQuestionTrigger() {
       currentIdx++;
-      if(currentIdx < selectedQuestions.length) {
-        saveProgress(); // SAVE WHEN MOVING TO NEXT
-        showQuestion();
-      } else {
-        showFinalResult();
-      }
+      currentIdx < selectedQuestions.length ? showQuestion() : showFinalResult();
     }
 
     function showFinalResult() {
-      clearSavedSession(); // CLEAR WHEN FINISHED
       clearInterval(timerInterval);
       document.getElementById("timerDisplay").style.display = "none";
       document.getElementById("bookmarkActionBtn").style.display = "none";
@@ -383,7 +315,7 @@
     }
 
     function goToHome() {
-      // Progress is preserved in localStorage, but UI reset
+      currentIdx = 0; score = 0; questionsAttempted = 0; wrongQuestions = [];
       clearInterval(timerInterval);
       document.getElementById("quizArea").style.display = "none";
       document.getElementById("pCont").style.display = "none";
@@ -394,7 +326,6 @@
       document.getElementById("progressBar").style.width = "0%";
       document.getElementById("trackerArea").style.display = "none";
       updateWeakBtn();
-      checkResumeStatus(); // Check button visibility on home
     }
 
     function updateWeakBtn() {
@@ -413,9 +344,9 @@
     }
 
     function checkSavedBtn() { document.getElementById("savedPracticeBtn").style.display = savedList.length > 0 ? "block" : "none"; }
-    function retryWrong() { clearSavedSession(); selectedQuestions = [...wrongQuestions]; initQuizUI(); }
-    function quitQuiz() { if(confirm("क्विज़ छोड़ें? (प्रोग्रेस सुरक्षित रहेगी)")) goToHome(); }
-    function startSavedPractice() { clearSavedSession(); isWeakMode = false; selectedQuestions = [...savedList]; initQuizUI(); }
+    function retryWrong() { selectedQuestions = [...wrongQuestions]; initQuizUI(); }
+    function quitQuiz() { if(confirm("क्विज़ छोड़ें?")) showFinalResult(); }
+    function startSavedPractice() { isWeakMode = false; selectedQuestions = [...savedList]; initQuizUI(); }
   </script>
 </body>
 </html>
