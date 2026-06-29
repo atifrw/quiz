@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #74ebd5, #acb6e5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .quiz-container {
+      background: white;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+    h2 {
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .option {
+      background: #f1f1f1;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .option.correct {
+      background-color: #c8f7c5;
+    }
+    .option.incorrect {
+      background-color: #f7c5c5;
+    }
+    .controls, .stats {
+      margin-top: 20px;
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <div id="question-box">
+      <h2 id="question">Loading...</h2>
+      <div id="options"></div>
+      <div class="controls">
+        <button id="next-btn">Next</button>
+        <button id="retry-btn" class="hidden">Retry Wrong</button>
+      </div>
+      <div class="stats">
+        <p id="progress"></p>
+        <p id="score"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let questions = [];
+    let currentIndex = 0;
+    let correct = 0;
+    let incorrect = 0;
+    let wrongQuestions = [];
+
+    async function loadQuestions() {
+      const res = await fetch("mcqs.json");
+      const data = await res.json();
+      questions = data.flatMap(ch => ch.questions.map(q => ({...q, chapter: ch.chapter})));
+      questions = shuffleArray(questions);
+      showQuestion();
+    }
+
+    function shuffleArray(arr) {
+      return arr.sort(() => Math.random() - 0.5);
+    }
+
+    function showQuestion() {
+      const q = questions[currentIndex];
+      document.getElementById("question").innerText = q.question;
+      const optionsBox = document.getElementById("options");
+      optionsBox.innerHTML = "";
+      q.options.forEach(opt => {
+        const btn = document.createElement("div");
+        btn.innerText = opt;
+        btn.className = "option";
+        btn.onclick = () => handleAnswer(btn, opt === q.answer);
+        optionsBox.appendChild(btn);
+      });
+      updateStats();
+    }
+
+    function handleAnswer(btn, isCorrect) {
+      const options = document.querySelectorAll(".option");
+      options.forEach(o => o.onclick = null);
+      if (isCorrect) {
+        correct++;
+        btn.classList.add("correct");
+      } else {
+        incorrect++;
+        btn.classList.add("incorrect");
+        const q = questions[currentIndex];
+        wrongQuestions.push(q);
+        [...options].find(o => o.innerText === q.answer)?.classList.add("correct");
+      }
+      updateStats();
+    }
+
+    document.getElementById("next-btn").onclick = () => {
+      if (currentIndex + 1 < questions.length) {
+        currentIndex++;
+        showQuestion();
+      } else {
+        endQuiz();
+      }
+    };
+
+    function updateStats() {
+      document.getElementById("progress").innerText = `Question ${currentIndex + 1} of ${questions.length}`;
+      document.getElementById("score").innerText = `✅ ${correct} | ❌ ${incorrect}`;
+    }
+
+    function endQuiz() {
+      document.getElementById("question").innerText = "Quiz Finished!";
+      document.getElementById("options").innerHTML = "";
+      document.getElementById("next-btn").classList.add("hidden");
+      if (wrongQuestions.length > 0) {
+        document.getElementById("retry-btn").classList.remove("hidden");
+      }
+    }
+
+    document.getElementById("retry-btn").onclick = () => {
+      questions = [...wrongQuestions];
+      currentIndex = 0;
+      correct = 0;
+      incorrect = 0;
+      wrongQuestions = [];
+      document.getElementById("next-btn").classList.remove("hidden");
+      document.getElementById("retry-btn").classList.add("hidden");
+      showQuestion();
+    };
+
+    loadQuestions();
+  </script>
+</body>
+</html>
