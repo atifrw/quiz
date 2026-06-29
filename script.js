@@ -22,20 +22,23 @@ fetch("mcqs.json")
     }
   });
 
-// Subject change → Chapter load
+// Subject change → Chapter load dynamically
 subjectSelect.addEventListener("change", () => {
   chapterSelect.innerHTML = `<option value="">-- अध्याय चुनें --</option>`;
 
   const subject = subjectSelect.value;
   if (!subject) return;
 
-  const chapters = data[subject]["प्राचीन भारत"];
+  const subjectData = data[subject];
 
-  for (let ch in chapters) {
-    let opt = document.createElement("option");
-    opt.value = ch;
-    opt.textContent = ch;
-    chapterSelect.appendChild(opt);
+  for (let part in subjectData) { // part = प्राचीन भारत, मध्यकालीन भारत, etc.
+    const chapters = subjectData[part];
+    for (let ch in chapters) {
+      let opt = document.createElement("option");
+      opt.value = part + "||" + ch; // unique value for later
+      opt.textContent = part + " - " + ch;
+      chapterSelect.appendChild(opt);
+    }
   }
 });
 
@@ -46,14 +49,18 @@ function startQuiz() {
   currentIndex = 0;
 
   const subject = subjectSelect.value;
-  const chapter = chapterSelect.value;
+  const chapterVal = chapterSelect.value;
 
-  if (!subject || !chapter) {
+  if (!subject || !chapterVal) {
     alert("पहले Subject और Chapter चुनें");
     return;
   }
 
-  currentQuestions = [...data[subject]["प्राचीन भारत"][chapter]];
+  const parts = chapterVal.split("||");
+  const part = parts[0];
+  const chapter = parts[1];
+
+  currentQuestions = [...data[subject][part][chapter]];
   shuffle(currentQuestions);
 
   document.getElementById("quizArea").style.display = "block";
