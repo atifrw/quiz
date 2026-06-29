@@ -1,105 +1,659 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔥 Premium MCQ Quiz</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Rubik', sans-serif;
-      background: linear-gradient(to right, #dbe6f6, #c5796d);
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 700px;
-      margin: auto;
-      background: white;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      animation: fadeIn 0.5s ease-in;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    h2 {
-      text-align: center;
-      color: #333;
-      font-size: 28px;
-    }
-    select, button {
-      padding: 12px;
-      font-size: 18px;
-      margin-bottom: 25px;
-      width: 100%;
-      border-radius: 10px;
-      border: none;
-      background-color: #f1f1f1;
-    }
-    .question-card {
-      background: #f0f0f0;
-      border-left: 6px solid #4e54c8;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      font-size: 24px;
-    }
-    .option-btn {
-      display: block;
-      background: #ffffff;
-      border: 2px solid #4e54c8;
-      color: #4e54c8;
-      font-weight: 600;
-      padding: 12px;
-      margin: 12px 0;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-    .option-btn:hover {
-      background: #4e54c8;
-      color: white;
-    }
-    .result {
-      font-weight: bold;
-      font-size: 20px;
-      margin-top: 15px;
-      color: #000;
-    }
-    #nextBtn {
-      display: none;
-      background: #28a745;
-      color: white;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>प्रश्न पत्र — MCQ अभ्यास</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Hind:wght@400;500;600;700&display=swap');
+
+  :root{
+    --paper: #F3ECDD;
+    --paper-line: #d8cdb2;
+    --ink: #2b2420;
+    --ink-soft: #5c5246;
+    --maroon: #7a2e2e;
+    --maroon-deep: #5c2020;
+    --gold: #b3863a;
+    --green: #2f6b4f;
+    --green-bg: #e3efe7;
+    --red: #9c3030;
+    --red-bg: #f5e3e1;
+    --card: #fbf7ee;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 35px, rgba(122,46,46,0.05) 36px),
+      radial-gradient(circle at 50% 0%, rgba(179,134,58,0.08), transparent 60%);
+    color:var(--ink);
+    font-family:'Hind', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3,.devhead{
+    font-family:'Tiro Devanagari Hindi', serif;
+  }
+
+  /* ===== Header ===== */
+  .masthead{
+    border-bottom:3px double var(--maroon);
+    padding:22px 20px 16px;
+    text-align:center;
+    position:relative;
+  }
+  .masthead .eyebrow{
+    font-size:12px;
+    letter-spacing:.12em;
+    color:var(--gold);
+    text-transform:uppercase;
+    font-weight:600;
+  }
+  .masthead h1{
+    margin:4px 0 2px;
+    font-size:30px;
+    color:var(--maroon-deep);
+    font-weight:700;
+  }
+  .masthead .sub{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  .wrap{
+    max-width:680px;
+    margin:0 auto;
+    padding:18px 16px 80px;
+  }
+
+  /* ===== Cards / sections ===== */
+  .panel{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:6px;
+    box-shadow:0 1px 0 var(--paper-line), 0 8px 18px -12px rgba(43,36,32,.35);
+  }
+
+  /* Selection screen */
+  .select-screen{padding:22px 18px;}
+  .select-screen h2{
+    font-size:15px;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+    font-family:'Hind',sans-serif;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    border-bottom:1px solid var(--paper-line);
+    padding-bottom:8px;
+  }
+
+  .category-block{margin-bottom:22px;}
+  .category-title{
+    font-size:20px;
+    color:var(--maroon-deep);
+    margin:0 0 10px;
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .category-title .count{
+    font-family:'Hind',sans-serif;
+    font-size:12px;
+    color:var(--gold);
+    font-weight:600;
+  }
+
+  .topic-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .topic-btn{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-left:4px solid var(--gold);
+    border-radius:5px;
+    padding:12px 14px;
+    font-size:16px;
+    color:var(--ink);
+    cursor:pointer;
+    text-align:left;
+    transition:transform .12s ease, background .12s ease, border-color .12s ease;
+    font-family:'Hind',sans-serif;
+    width:100%;
+  }
+  .topic-btn:hover{
+    background:#ece2c8;
+    border-left-color:var(--maroon);
+  }
+  .topic-btn:active{transform:scale(.985);}
+  .topic-btn .tname{font-weight:500;}
+  .topic-btn .tmeta{
+    font-size:12px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+    background:rgba(122,46,46,.08);
+    padding:3px 8px;
+    border-radius:20px;
+  }
+  .topic-btn:focus-visible, .pill:focus-visible, button:focus-visible{
+    outline:3px solid var(--gold);
+    outline-offset:2px;
+  }
+
+  .empty-state{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+  }
+  .empty-state .big{font-size:40px;display:block;margin-bottom:10px;}
+
+  /* Quiz header bar */
+  .quiz-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid var(--paper-line);
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .quiz-meta .breadcrumb{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .quiz-meta .breadcrumb b{color:var(--maroon-deep);}
+  .score-pill{
+    background:var(--maroon-deep);
+    color:var(--paper);
+    font-size:13px;
+    font-weight:600;
+    padding:5px 12px;
+    border-radius:20px;
+    font-family:'Hind',sans-serif;
+  }
+
+  .progress-track{
+    height:5px;
+    background:var(--paper-line);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--gold), var(--maroon));
+    transition:width .35s ease;
+    width:0%;
+  }
+
+  /* Question card */
+  .qcard{padding:22px 18px 18px;}
+  .qnum{
+    font-size:12px;
+    color:var(--gold);
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .qtext{
+    font-size:19px;
+    line-height:1.55;
+    margin:0 0 18px;
+    color:var(--ink);
+    font-family:'Tiro Devanagari Hindi', serif;
+  }
+
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .option{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    background:var(--paper);
+    border:1.5px solid var(--paper-line);
+    border-radius:6px;
+    padding:12px 14px;
+    font-size:16px;
+    cursor:pointer;
+    transition:border-color .12s ease, background .12s ease;
+    width:100%;
+    text-align:left;
+    font-family:'Hind',sans-serif;
+    color:var(--ink);
+  }
+  .option:hover{border-color:var(--gold);}
+  .option .opt-letter{
+    flex:0 0 auto;
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    border:1.5px solid var(--ink-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .option.correct{
+    background:var(--green-bg);
+    border-color:var(--green);
+  }
+  .option.correct .opt-letter{border-color:var(--green); color:var(--green); background:#fff;}
+  .option.wrong{
+    background:var(--red-bg);
+    border-color:var(--red);
+  }
+  .option.wrong .opt-letter{border-color:var(--red); color:var(--red); background:#fff;}
+  .option.disabled-other{opacity:.55; cursor:default;}
+  .option:disabled, .option.locked{cursor:default;}
+
+  .feedback-tag{
+    margin-left:auto;
+    font-size:12px;
+    font-weight:700;
+    flex:0 0 auto;
+    padding-top:2px;
+  }
+  .feedback-tag.correct-tag{color:var(--green);}
+  .feedback-tag.wrong-tag{color:var(--red);}
+
+  .nav-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 18px 20px;
+    gap:10px;
+    border-top:1px solid var(--paper-line);
+  }
+  .btn{
+    font-family:'Hind',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:5px;
+    border:1.5px solid var(--maroon-deep);
+    background:transparent;
+    color:var(--maroon-deep);
+    cursor:pointer;
+    transition:background .12s ease, color .12s ease;
+  }
+  .btn:hover{background:var(--maroon-deep); color:var(--paper);}
+  .btn:disabled{opacity:.35; cursor:not-allowed; background:transparent; color:var(--maroon-deep);}
+  .btn.primary{
+    background:var(--maroon-deep);
+    color:var(--paper);
+  }
+  .btn.primary:hover{background:var(--maroon);}
+  .btn.ghost{
+    border-color:var(--paper-line);
+    color:var(--ink-soft);
+  }
+  .btn.ghost:hover{background:var(--paper-line); color:var(--ink);}
+
+  /* Result screen */
+  .result-screen{
+    padding:36px 22px;
+    text-align:center;
+  }
+  .result-screen .stamp{
+    font-size:13px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--gold);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .result-score{
+    font-family:'Tiro Devanagari Hindi', serif;
+    font-size:48px;
+    color:var(--maroon-deep);
+    margin:0 0 4px;
+  }
+  .result-score span{font-size:24px; color:var(--ink-soft);}
+  .result-label{color:var(--ink-soft); margin-bottom:24px; font-size:14px;}
+  .result-actions{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  .review-list{
+    text-align:left;
+    margin-top:28px;
+    border-top:1px solid var(--paper-line);
+    padding-top:18px;
+  }
+  .review-item{
+    padding:10px 0;
+    border-bottom:1px dashed var(--paper-line);
+    font-size:14px;
+  }
+  .review-item:last-child{border-bottom:none;}
+  .review-item .rq{color:var(--ink); margin-bottom:4px;}
+  .review-item .ra{font-size:13px;}
+  .review-item .ra.right{color:var(--green);}
+  .review-item .ra.miss{color:var(--red);}
+
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    padding:18px;
+  }
+
+  /* loading / error */
+  .status-msg{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+    font-size:15px;
+  }
+  .status-msg code{
+    background:var(--paper-line);
+    padding:2px 6px;
+    border-radius:4px;
+    font-size:13px;
+  }
+
+  @media (max-width: 420px){
+    .masthead h1{font-size:25px;}
+    .qtext{font-size:17px;}
+    .result-score{font-size:38px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
 </head>
-
 <body>
-  <div class="container">
-    <h2>🔥 Premium Quiz App</h2>
 
-    <!-- SUBJECT DROPDOWN (NEW) -->
-    <select id="subjectSelect">
-      <option value="">-- Subject चुनें --</option>
-    </select>
+<div class="masthead">
+  <div class="eyebrow">अभ्यास प्रश्न पत्र</div>
+  <h1>MCQ अभ्यास केंद्र</h1>
+  <div class="sub">विषय चुनें · अभ्यास करें · स्कोर देखें</div>
+</div>
 
-    <!-- CHAPTER DROPDOWN -->
-    <select id="chapterSelect">
-      <option value="">-- अध्याय चुनें --</option>
-    </select>
+<div class="wrap" id="app">
+  <div class="status-msg">प्रश्न लोड हो रहे हैं…</div>
+</div>
 
-    <button onclick="startQuiz()">🎯 शुरू करें</button>
+<footer>बेहतर तैयारी, बेहतर परिणाम।</footer>
 
-    <div id="quizArea" style="display:none;">
-      <div id="questionBox" class="question-card"></div>
-      <div id="optionsBox"></div>
-      <div id="resultBox" class="result"></div>
-      <button id="nextBtn" class="option-btn" onclick="showNext()">➡️ अगला सवाल</button>
-    </div>
-  </div>
+<script>
+(function(){
+  "use strict";
 
-  <script src="script.js"></script>
+  const app = document.getElementById('app');
+  let DATA = null;
+
+  // ---------- state ----------
+  let state = {
+    screen: 'loading', // loading | select | quiz | result
+    category: null,
+    topic: null,
+    questions: [],
+    qIndex: 0,
+    selected: null,     // currently selected option for this question (before lock)
+    locked: false,
+    answers: []         // {question, options, answer, picked, correct}
+  };
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  // ---------- load data ----------
+  fetch('mcqs.json')
+    .then(res => {
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(json => {
+      DATA = json;
+      state.screen = 'select';
+      render();
+    })
+    .catch(err => {
+      app.innerHTML = `
+        <div class="status-msg">
+          <div style="font-size:34px;margin-bottom:10px;">⚠️</div>
+          <strong>mcqs.json लोड नहीं हो सका</strong><br><br>
+          सुनिश्चित करें कि <code>mcqs.json</code> फ़ाइल इस <code>index.html</code> के
+          <u>ठीक उसी फ़ोल्डर</u> में है और GitHub Pages से वेबसाइट खुली है
+          (फ़ाइल को सीधे डबल-क्लिक करके खोलने पर ब्राउज़र JSON लोड नहीं कर पाता,
+          इसके लिए होस्ट किया हुआ पेज चाहिए जैसे GitHub Pages)।<br><br>
+          <span style="font-size:12px;color:var(--ink-soft)">तकनीकी विवरण: ${escapeHtml(err.message)}</span>
+        </div>`;
+    });
+
+  // ---------- helpers ----------
+  function countQuestions(arr){ return arr.length; }
+
+  function startTopic(cat, topic){
+    const qs = DATA[cat][topic];
+    state.category = cat;
+    state.topic = topic;
+    state.questions = qs;
+    state.qIndex = 0;
+    state.selected = null;
+    state.locked = false;
+    state.answers = [];
+    state.screen = 'quiz';
+    render();
+  }
+
+  function pickOption(idx){
+    if(state.locked) return;
+    state.selected = idx;
+    state.locked = true;
+    const q = state.questions[state.qIndex];
+    const pickedText = q.options[idx];
+    const isCorrect = pickedText === q.answer;
+    state.answers[state.qIndex] = {
+      question: q.question,
+      options: q.options,
+      answer: q.answer,
+      picked: pickedText,
+      correct: isCorrect
+    };
+    render();
+  }
+
+  function nextQuestion(){
+    if(state.qIndex < state.questions.length - 1){
+      state.qIndex++;
+      state.selected = null;
+      state.locked = false;
+      render();
+    } else {
+      state.screen = 'result';
+      render();
+    }
+  }
+
+  function prevQuestion(){
+    if(state.qIndex > 0){
+      state.qIndex--;
+      const prevAns = state.answers[state.qIndex];
+      if(prevAns){
+        state.selected = prevAns.options.indexOf(prevAns.picked);
+        state.locked = true;
+      } else {
+        state.selected = null;
+        state.locked = false;
+      }
+      render();
+    }
+  }
+
+  function backToSelect(){
+    state.screen = 'select';
+    render();
+  }
+
+  function retryTopic(){
+    startTopic(state.category, state.topic);
+  }
+
+  // ---------- render ----------
+  function render(){
+    if(state.screen === 'select') return renderSelect();
+    if(state.screen === 'quiz') return renderQuiz();
+    if(state.screen === 'result') return renderResult();
+  }
+
+  function renderSelect(){
+    const cats = Object.keys(DATA || {});
+    if(cats.length === 0){
+      app.innerHTML = `<div class="empty-state"><span class="big">📭</span>अभी कोई प्रश्न उपलब्ध नहीं है।</div>`;
+      return;
+    }
+
+    let html = `<div class="panel select-screen"><h2>विषय चुनें</h2>`;
+    cats.forEach(cat => {
+      const topics = DATA[cat];
+      const topicNames = Object.keys(topics);
+      const totalQ = topicNames.reduce((sum,t)=> sum + countQuestions(topics[t]), 0);
+      html += `
+        <div class="category-block">
+          <div class="category-title">${escapeHtml(cat)} <span class="count">(${totalQ} प्रश्न)</span></div>
+          <div class="topic-list">
+            ${topicNames.map(t => `
+              <button class="topic-btn" data-cat="${escapeHtml(cat)}" data-topic="${escapeHtml(t)}">
+                <span class="tname">${escapeHtml(t)}</span>
+                <span class="tmeta">${countQuestions(topics[t])} प्रश्न</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+    app.innerHTML = html;
+
+    app.querySelectorAll('.topic-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        startTopic(btn.dataset.cat, btn.dataset.topic);
+      });
+    });
+  }
+
+  function renderQuiz(){
+    const q = state.questions[state.qIndex];
+    const total = state.questions.length;
+    const answeredCorrect = state.answers.filter(a => a && a.correct).length;
+    const progressPct = Math.round(((state.qIndex) / total) * 100);
+
+    const optionsHtml = q.options.map((opt, idx) => {
+      let cls = 'option';
+      let tag = '';
+      if(state.locked){
+        const isAnswer = opt === q.answer;
+        const isPicked = idx === state.selected;
+        if(isAnswer){
+          cls += ' correct';
+          tag = '<span class="feedback-tag correct-tag">✓ सही उत्तर</span>';
+        } else if(isPicked){
+          cls += ' wrong';
+          tag = '<span class="feedback-tag wrong-tag">✕ आपका उत्तर</span>';
+        } else {
+          cls += ' disabled-other';
+        }
+      }
+      const letter = String.fromCharCode(65 + idx); // A, B, C, D
+      return `
+        <button class="${cls}" data-idx="${idx}" ${state.locked ? 'disabled' : ''}>
+          <span class="opt-letter">${letter}</span>
+          <span style="flex:1;">${escapeHtml(opt)}</span>
+          ${tag}
+        </button>`;
+    }).join('');
+
+    app.innerHTML = `
+      <div class="panel">
+        <div class="quiz-meta">
+          <div class="breadcrumb"><b>${escapeHtml(state.category)}</b> · ${escapeHtml(state.topic)}</div>
+          <div class="score-pill">स्कोर: ${answeredCorrect}/${state.answers.filter(a=>a).length}</div>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+        <div class="qcard">
+          <div class="qnum">प्रश्न ${state.qIndex + 1} / ${total}</div>
+          <p class="qtext">${escapeHtml(q.question)}</p>
+          <div class="options">${optionsHtml}</div>
+        </div>
+        <div class="nav-row">
+          <button class="btn ghost" id="exitBtn">← विषय बदलें</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn" id="prevBtn" ${state.qIndex === 0 ? 'disabled' : ''}>पिछला</button>
+            <button class="btn primary" id="nextBtn" ${state.locked ? '' : 'disabled'}>
+              ${state.qIndex === total - 1 ? 'परिणाम देखें' : 'आगे →'}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    app.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', () => pickOption(Number(btn.dataset.idx)));
+    });
+    document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+    document.getElementById('prevBtn').addEventListener('click', prevQuestion);
+    document.getElementById('exitBtn').addEventListener('click', backToSelect);
+  }
+
+  function renderResult(){
+    const total = state.questions.length;
+    const correct = state.answers.filter(a => a && a.correct).length;
+    const pct = Math.round((correct/total) * 100);
+
+    let label = 'और अभ्यास करें';
+    if(pct >= 90) label = 'उत्कृष्ट! बहुत बढ़िया तैयारी';
+    else if(pct >= 70) label = 'बहुत अच्छा प्रदर्शन';
+    else if(pct >= 50) label = 'ठीक है, और अभ्यास करें';
+
+    const reviewHtml = state.answers.map((a, i) => `
+      <div class="review-item">
+        <div class="rq">${i+1}. ${escapeHtml(a.question)}</div>
+        <div class="ra ${a.correct ? 'right' : 'miss'}">
+          ${a.correct ? '✓ सही — ' + escapeHtml(a.answer) : '✕ आपका उत्तर: ' + escapeHtml(a.picked) + ' · सही उत्तर: ' + escapeHtml(a.answer)}
+        </div>
+      </div>
+    `).join('');
+
+    app.innerHTML = `
+      <div class="panel result-screen">
+        <div class="stamp">${escapeHtml(state.category)} · ${escapeHtml(state.topic)}</div>
+        <div class="result-score">${correct}<span> / ${total}</span></div>
+        <div class="result-label">${label} · ${pct}% सही</div>
+        <div class="result-actions">
+          <button class="btn primary" id="retryBtn">फिर से प्रयास करें</button>
+          <button class="btn" id="changeBtn">दूसरा विषय चुनें</button>
+        </div>
+        <div class="review-list">${reviewHtml}</div>
+      </div>
+    `;
+
+    document.getElementById('retryBtn').addEventListener('click', retryTopic);
+    document.getElementById('changeBtn').addEventListener('click', backToSelect);
+  }
+
+})();
+</script>
+
 </body>
 </html>
