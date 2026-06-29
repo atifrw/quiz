@@ -1,94 +1,125 @@
-
-let questions = [];
-let currentQuestionIndex = 0;
+let data = {};
+let currentQuestions = [];
+let currentIndex = 0;
 let correctCount = 0;
 let wrongCount = 0;
-let wrongQuestions = [];
 
-async function loadQuestions() {
-    const response = await fetch("mcqs.json");
-    const data = await response.json();
-    questions = data.flatMap(chapter => chapter.questions);
-    questions = shuffleArray(questions);
-    showQuestion();
-}
+const subjectSelect = document.getElementById("subjectSelect");
+const chapterSelect = document.getElementById("chapterSelect");
 
-function shuffleArray(array) {
-    return array.sort(() => Math.random() - 0.5);
-}
+// JSON load
+fetch("mcqs.json")
+  .then(res => res.json())
+  .then(json => {
+    data = json;
 
-function showQuestion() {
-    const q = questions[currentQuestionIndex];
-    document.getElementById("question").innerText = q.question;
-    const options = document.getElementById("options");
-    options.innerHTML = "";
-    q.options.forEach(option => {
-        const btn = document.createElement("button");
-        btn.className = "option-btn";
-        btn.innerText = option;
-        btn.onclick = () => checkAnswer(option, q.answer, btn);
-        options.appendChild(btn);
-    });
-    updateProgress();
-}
-
-function checkAnswer(selected, correct, btn) {
-    const buttons = document.querySelectorAll(".option-btn");
-    buttons.forEach(b => {
-        b.disabled = true;
-        if (b.innerText === correct) {
-            b.classList.add("correct");
-        }
-        if (b.innerText === selected && selected !== correct) {
-            b.classList.add("wrong");
-        }
-    });
-
-    if (selected === correct) {
-        correctCount++;
-    } else {
-        wrongCount++;
-        wrongQuestions.push(questions[currentQuestionIndex]);
+    // Subject load
+    for (let subject in data) {
+      let opt = document.createElement("option");
+      opt.value = subject;
+      opt.textContent = subject;
+      subjectSelect.appendChild(opt);
     }
+  });
 
-    setTimeout(() => {
-        currentQuestionIndex++;
-        if (currentQuestionIndex < questions.length) {
-            showQuestion();
-        } else {
-            showResult();
-        }
-    }, 1000);
+// Subject change → Chapter load
+subjectSelect.addEventListener("change", () => {
+  chapterSelect.innerHTML = `<option value="">-- अध्याय चुनें --</option>`;
+
+  const subject = subjectSelect.value;
+  if (!subject) return;
+
+  const chapters = data[subject]["प्राचीन भारत"];
+
+  for (let ch in chapters) {
+    let opt = document.createElement("option");
+    opt.value = ch;
+    opt.textContent = ch;
+    chapterSelect.appendChild(opt);
+  }
+});
+
+// Quiz start
+function startQuiz() {
+  correctCount = 0;
+  wrongCount = 0;
+  currentIndex = 0;
+
+  const subject = subjectSelect.value;
+  const chapter = chapterSelect.value;
+
+  if (!subject || !chapter) {
+    alert("पहले Subject और Chapter चुनें");
+    return;
+  }
+
+  currentQuestions = [...data[subject]["प्राचीन भारत"][chapter]];
+  shuffle(currentQuestions);
+
+  document.getElementById("quizArea").style.display = "block";
+  showQuestion();
 }
 
-function showResult() {
-    document.getElementById("quiz-box").innerHTML = `
-        <h2>Quiz Complete</h2>
-        <p>✅ सही जवाब: ${correctCount}</p>
-        <p>❌ गलत जवाब: ${wrongCount}</p>
-        <button onclick="retryWrong()">🔁 गलत सवालों को फिर से हल करें</button>
-        <button onclick="location.reload()">🔄 Restart Quiz</button>
-    `;
+// Show question
+function showQuestion() {
+  const q = currentQuestions[currentIndex];
+
+  document.getElementById("questionBox").innerHTML =
+    `<b>Q${currentIndex + 1}:</b> ${q.question}`;
+
+  const box = document.getElementById("optionsBox");
+  box.innerHTML = "";
+
+  document.getElementById("resultBox").innerText = "";
+  document.getElementById("nextBtn").style.display = "none";
+
+  q.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = opt;
+
+    btn.onclick = () => {
+      if (opt === q.answer) {
+        correctCount++;
+        document.getElementById("resultBox").innerText = "✅ सही उत्तर!";
+      } else {
+        wrongCount++;
+        document.getElementById("resultBox").innerText =
+          `❌ गलत! सही उत्तर: ${q.answer}`;
+      }
+      document.getElementById("nextBtn").style.display = "block";
+    };
+
+    box.appendChild(btn);
+  });
 }
 
-function retryWrong() {
-    if (wrongQuestions.length === 0) return;
-    questions = [...wrongQuestions];
-    wrongQuestions = [];
-    currentQuestionIndex = 0;
-    correctCount = 0;
-    wrongCount = 0;
-    document.getElementById("quiz-box").innerHTML = `
-        <div id="question" class="question"></div>
-        <div id="options" class="options"></div>
-        <div id="progress" class="progress"></div>
-    `;
+// Next question
+function showNext() {
+  currentIndex++;
+
+  if (currentIndex < currentQuestions.length) {
     showQuestion();
+  } else {
+    document.getElementById("questionBox").innerHTML =
+      "🎉 आपने सभी प्रश्न हल कर लिए!";
+
+    document.getElementById("optionsBox").innerHTML = "";
+
+    document.getElementById("resultBox").innerHTML = `
+✅ सही जवाब: ${correctCount}<br>
+❌ गलत जवाब: ${wrongCount}<br>
+📊 कुल प्रश्न: ${currentQuestions.length}
+`;
+
+    document.getElementById("nextBtn").style.display = "none";
+  }
 }
 
-function updateProgress() {
-    document.getElementById("progress").innerText = 
-        \`Question \${currentQuestionIndex + 1} of \${questions.length}  |  ✅ \${correctCount} | ❌ \${wrongCount}\`;
+// Shuffle
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
 }
-
-window.onload = loadQuestions;
